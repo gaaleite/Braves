@@ -163,7 +163,6 @@ with st.expander("➕ Adicionar Nova Aba / Categoria"):
         if nova_aba_input and nova_aba_input not in lista_abas:
             nova_linha = pd.DataFrame({"nome_aba": [nova_aba_input]})
             df_abas_config = pd.concat([df_abas_config, nova_linha], ignore_index=True)
-            salvar_dados(df_abas_config, "abas_config")
             st.success(f"Aba '{nova_aba_input}' criada com sucesso!")
             st. those_rows = st.rerun()
 
