@@ -149,7 +149,6 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                 st.session_state.atletas_geral = pd.concat([df_restante, df_atl_editada], ignore_index=True)
                 st.success("Atletas salvos no painel!")
                 st.rerun()
-    salvar_dados(df_abas_config, "abas_config")
 
 lista_abas = df_abas_config["nome_aba"].dropna().tolist()
 
