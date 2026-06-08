@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves - Gerenciador de Jogos (Google Sheets)")
 
 # LINK DA SUA PLANILHA (Substitua pelo seu link de compartilhamento)
-URL_NORMAL = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?usp=drive_link"
+URL_NORMAL = "COLOQUE_AQUI_O_LINK_DA_SUA_PLANILHA"
 
 # -------------------------------------------------------------------------
 # FUNÇÃO DE LEITURA DIRETA DO GOOGLE SHEETS VIA PANDAS
@@ -17,8 +17,12 @@ URL_NORMAL = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxX
 def carregar_aba_google(url_planilha, nome_aba):
     try:
         base_url = url_planilha.split("/edit")
-        csv_url = f"{base_url[0]}/gviz/tq?tqx=out:csv&sheet={nome_aba.replace(' ', '%20')}"
-        return pd.read_csv(csv_url)
+        csv_url = f"{base_url}/gviz/tq?tqx=out:csv&sheet={nome_aba.replace(' ', '%20')}"
+        df = pd.read_csv(csv_url)
+        # Força o nome das colunas a ficarem em letras minúsculas e sem espaços extras
+        if not df.empty:
+            df.columns = df.columns.str.strip().str.lower()
+        return df
     except Exception:
         return pd.DataFrame()
 
@@ -32,8 +36,117 @@ if "lista_abas" not in st.session_state:
     else:
         st.session_state.lista_abas = ["todos os jogos", "classificações", "houston 25"]
 
+# Blocos de proteção: Garante que as colunas sempre existirão na memória
 if "jogos_geral" not in st.session_state:
     df_j = carregar_aba_google(URL_NORMAL, "dados_jogos")
+    if df_j.empty or "aba" not in df_j.columns:
+        df_j = pd.DataFrame(columns=["aba", "ano", "dia", "torneio", "td", "conversao", "safety", "interceptacao"])
+    st.session_state.jogos_geral = df_j
+
+if "comissao_geral" not in st.session_state:
+    df_c = carregar_aba_google(URL_NORMAL, "comissao_tecnica")
+    if df_c.empty or "aba" not in df_c.columns:
+        df_c = pd.DataFrame(columns=["aba", "nome", "funcao"])
+    st.session_state.comissao_geral = df_c
+
+if "atletas_geral" not in st.session_state:
+    df_a = carregar_aba_google(URL_NORMAL, "atletas")
+    if df_a.empty or "aba" not in df_a.columns:
+        df_a = pd.DataFrame(columns=["aba", "nome", "posicao"])
+    st.session_state.atletas_geral = df_a
+
+# -------------------------------------------------------------------------
+# INTERFACE INTERATIVA
+# -------------------------------------------------------------------------
+with st.expander("➕ Adicionar Nova Aba / Categoria"):
+    nova_aba_input = st.text_input("Nome da nova aba:", placeholder="Ex: playoffs 25").strip().lower()
+    if st.button("Criar Aba"):
+        if nova_aba_input and nova_aba_input not in st.session_state.lista_abas:
+            st.session_state.lista_abas.append(nova_aba_input)
+            st.success(f"Aba '{nova_aba_input}' criada com sucesso!")
+            st.rerun()
+
+tabs = st.tabs([aba.title() for aba in st.session_state.lista_abas])
+
+for i, nome_da_aba in enumerate(st.session_state.lista_abas):
+    with tabs[i]:
+        st.subheader(f"Painel: {nome_da_aba.title()}")
+        st.write("### 📈 Gráfico de Desempenho")
+        
+        df_jogos_aba = st.session_state.jogos_geral[st.session_state.jogos_geral["aba"] == nome_da_aba].copy()
+        
+        if not df_jogos_aba.empty:
+            df_jogos_aba["Eixo_Esquerdo"] = (
+                df_jogos_aba["ano"].astype(str) + " | " + 
+                df_jogos_aba["dia"].astype(str) + " | " + 
+                df_jogos_aba["torneio"].astype(str)
+            )
+            
+            # Força colunas numéricas necessárias a serem tratadas como números (evita erros de gráfico)
+            colunas_num = ["td", "conversao", "safety", "interceptacao"]
+            for col in colunas_num:
+                if col in df_jogos_aba.columns:
+                    df_jogos_aba[col] = pd.to_numeric(df_jogos_aba[col], errors='coerce').fillna(0)
+            
+            fig = px.bar(
+                df_jogos_aba,
+                y="Eixo_Esquerdo",
+                x=[c for c in colunas_num if c in df_jogos_aba.columns],
+                barmode="group",
+                labels={"value": "Quantidade", "Eixo_Esquerdo": "Ano | Dia | Torneio", "variable": "Estatística"},
+                orientation="h"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Adicione jogos abaixo para gerar o gráfico.")
+
+        with st.expander("➕ Adicionar Novo Jogo para o Gráfico"):
+            c1, c2, c3 = st.columns(3)
+            ano = c1.text_input("Ano", key=f"ano_{nome_da_aba}")
+            dia = c2.text_input("Dia (dd/mm)", key=f"dia_{nome_da_aba}")
+            torneio = c3.text_input("Torneio", key=f"tor_{nome_da_aba}")
+            
+            c4, c5, c6, c7 = st.columns(4)
+            td = c4.number_input("TD", min_value=0, step=1, key=f"td_{nome_da_aba}")
+            conv = c5.number_input("Conversão", min_value=0, step=1, key=f"cv_{nome_da_aba}")
+            saf = c6.number_input("Safety", min_value=0, step=1, key=f"sf_{nome_da_aba}")
+            inter = c7.number_input("Interceptação", min_value=0, step=1, key=f"int_{nome_da_aba}")
+            
+            if st.button("Adicionar Jogo à Lista", key=f"btn_jogo_{nome_da_aba}"):
+                novo_jogo = pd.DataFrame([{
+                    "aba": nome_da_aba, "ano": ano, "dia": dia, "torneio": torneio,
+                    "td": td, "conversao": conv, "safety": saf, "interceptacao": inter
+                }])
+                st.session_state.jogos_geral = pd.concat([st.session_state.jogos_geral, novo_jogo], ignore_index=True)
+                st.success("Jogo adicionado com sucesso!")
+                st.rerun()
+
+        st.markdown("---")
+        col1, espaco, col2 = st.columns([1, 0.1, 1])
+        
+        with col1:
+            st.write("### 📋 Comissão Técnica")
+            df_com_aba = st.session_state.comissao_geral[st.session_state.comissao_geral["aba"] == nome_da_aba][["nome", "funcao"]].reset_index(drop=True)
+            df_com_editada = st.data_editor(df_com_aba, num_rows="dynamic", key=f"edt_com_{nome_da_aba}", use_container_width=True)
+            
+            if st.button("Fixar Alterações da Comissão", key=f"sv_com_{nome_da_aba}"):
+                df_com_editada["aba"] = nome_da_aba
+                df_restante = st.session_state.comissao_geral[st.session_state.comissao_geral["aba"] != nome_da_aba]
+                st.session_state.comissao_geral = pd.concat([df_restante, df_com_editada], ignore_index=True)
+                st.success("Alterações salvas no painel!")
+                st.rerun()
+
+        with col2:
+            st.write("### 🏃 Atletas")
+            df_atl_aba = st.session_state.atletas_geral[st.session_state.atletas_geral["aba"] == nome_da_aba][["nome", "posicao"]].reset_index(drop=True)
+            df_atl_editada = st.data_editor(df_atl_aba, num_rows="dynamic", key=f"edt_atl_{nome_da_aba}", use_container_width=True)
+            
+            if st.button("Fixar Alterações dos Atletas", key=f"sv_atl_{nome_da_aba}"):
+                df_atl_editada["aba"] = nome_da_aba
+                df_restante = st.session_state.atletas_geral[st.session_state.atletas_geral["aba"] != nome_da_aba]
+                st.session_state.atletas_geral = pd.concat([df_restante, df_atl_editada], ignore_index=True)
+                st.success("Atletas salvos no painel!")
+                st.rerun()
     st.session_state.jogos_geral = df_j if not df_j.empty else pd.DataFrame(columns=["aba", "ano", "dia", "torneio", "td", "conversao", "safety", "interceptacao"])
 
 if "comissao_geral" not in st.session_state:
