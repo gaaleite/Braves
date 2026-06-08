@@ -9,7 +9,7 @@ st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves - Gerenciador de Jogos (Google Sheets)")
 
 # LINK DA SUA PLANILHA DO GOOGLE DRIVE
-URL_PLANILHA = "COLOQUE_AQUI_O_LINK_DA_SUA_PLANILHA"
+URL_PLANILHA = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?usp=drive_link"
 
 # Inicializa a conexão nativa do Streamlit com o Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
