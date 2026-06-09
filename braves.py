@@ -21,23 +21,28 @@ def carregar_aba_google(url_planilha):
             df.columns = df.columns.str.strip()
             df = df.dropna(how='all')
             
-            # ATRIBUIÇÃO FORÇADA PELA POSIÇÃO DAS COLUNAS (K=10, L=11)
-            if len(df.columns) >= 12:
-                df.rename(columns={df.columns[10]: "PP", df.columns[11]: "PC"}, inplace=True)
+            # MAPEAMENTO EXATO BASEADO NAS POSIÇÕES INFORMADAS
+            qtd_colunas = len(df.columns)
+            
+            # Dicionário para renomear colunas por índice físico
+            novos_nomes = {}
+            if qtd_colunas >= 2:   novos_nomes[df.columns[1]]  = "DATA_INTERNA"
+            if qtd_colunas >= 3:   novos_nomes[df.columns[2]]  = "ANO_INTERNA"
+            if qtd_colunas >= 4:   novos_nomes[df.columns[3]]  = "JOGO_INTERNA"
+            if qtd_colunas >= 5:   novos_nomes[df.columns[4]]  = "TIME_INTERNA"
+            if qtd_colunas >= 7:   novos_nomes[df.columns[6]]  = "CIDADE_INTERNA"
+            if qtd_colunas >= 8:   novos_nomes[df.columns[7]]  = "ESTADO_INTERNA"
+            if qtd_colunas >= 9:   novos_nomes[df.columns[8]]  = "VD_INTERNA"
+            if qtd_colunas >= 11:  novos_nomes[df.columns[10]] = "PP_INTERNA"
+            if qtd_colunas >= 12:  novos_nomes[df.columns[11]] = "PC_INTERNA"
+            if qtd_colunas >= 13:  novos_nomes[df.columns[12]] = "ADVERSARIO_INTERNA"
+            
+            df.rename(columns=novos_nomes, inplace=True)
+                
         return df
     except Exception as e:
         st.error(f"Erro ao conectar com o Google Sheets: {e}")
         return pd.DataFrame()
-
-# Mapeador inteligente de colunas restantes
-def obter_coluna_real(df, nomes_possiveis, padrao):
-    if df.empty:
-        return padrao
-    for nome in nomes_possiveis:
-        for col in df.columns:
-            if col.lower().strip() == nome.lower().strip():
-                return col
-    return padrao
 
 # -------------------------------------------------------------------------
 # GERENCIAMENTO DOS DADOS EM MEMÓRIA
@@ -60,17 +65,24 @@ tabs = st.tabs(st.session_state.lista_abas)
 # Carrega os dados reais da planilha
 df_todos_jogos = carregar_aba_google(URL_NORMAL)
 
-# Mapeia as colunas dinamicamente baseado no que existe na tabela real
-col_data = obter_coluna_real(df_todos_jogos, ["data", "date"], "DATA")
-col_ano = obter_coluna_real(df_todos_jogos, ["ano", "year"], "ANO")
-col_jogo = obter_coluna_real(df_todos_jogos, ["jogo", "game"], "JOGO")
-col_time = obter_coluna_real(df_todos_jogos, ["time", "team", "categoria"], "TIME")
-col_cidade = obter_coluna_real(df_todos_jogos, ["cidade", "estado", "cidade-estado"], "CIDADE")
-col_vd = obter_coluna_real(df_todos_jogos, ["v / d", "v/d", "resultado"], "V / D")
-col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário", "opponent"], "ADVERSÁRIO")
+# Nomes padronizados das variáveis internas
+col_data = "DATA_INTERNA"
+col_ano = "ANO_INTERNA"
+col_jogo = "JOGO_INTERNA"
+col_time = "TIME_INTERNA"
+col_cidade = "CIDADE_INTERNA"
+col_estado = "ESTADO_INTERNA"
+col_vd = "VD_INTERNA"
+col_pp = "PP_INTERNA"
+col_pc = "PC_INTERNA"
+col_adv = "ADVERSARIO_INTERNA"
 
-col_pp = "PP"
-col_pc = "PC"
+colunas_finais = [col_data, col_ano, col_jogo, col_time, col_cidade, col_estado, col_vd, col_pp, col_pc, col_adv]
+
+# Garante a existência das colunas para evitar falhas de compilação
+for col in colunas_finais:
+    if not df_todos_jogos.empty and col not in df_todos_jogos.columns:
+        df_todos_jogos[col] = ""
 
 # Renderizar o conteúdo de cada aba
 for i, nome_da_aba in enumerate(st.session_state.lista_abas):
@@ -135,28 +147,32 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                     
                     st.write("### 📈 Linha de Tendência e Pontuação")
                     
+                    # Converte os pontos para formato numérico
                     df_filtrado[col_pp] = pd.to_numeric(df_filtrado[col_pp], errors='coerce').fillna(0)
                     df_filtrado[col_pc] = pd.to_numeric(df_filtrado[col_pc], errors='coerce').fillna(0)
                     
-                    # Identificador legível para o eixo X do gráfico (Cronologia dos jogos)
+                    # Constrói o texto identificador de cada jogo no eixo X de forma limpa
                     df_filtrado["Partida"] = (
                         "J" + df_filtrado[col_jogo].astype(str) + " - " +
                         df_filtrado[col_time].astype(str) + " vs " +
                         df_filtrado[col_adv].astype(str)
                     )
                     
-                    # GERAÇÃO DO GRÁFICO EM FORMATO DE LINHAS (px.line)
+                    # Criação do gráfico em formato de linha contínua
                     fig = px.line(
                         df_filtrado,
                         x="Partida",
                         y=[col_pp, col_pc],
                         title="Evolução de Pontos Feitos (PP) vs Pontos Sofridos (PC)",
                         color_discrete_map={col_pp: "#2ecc71", col_pc: "#e74c3c"},
-                        markers=True, # Adiciona pontos/bolinhas marcadoras em cada jogo da linha
+                        markers=True,
                         labels={"value": "Pontuação", "Partida": "Histórico de Jogos", "variable": "Indicador"}
                     )
                     
-                    # Ajustes extras para melhorar a leitura do gráfico de linhas
+                    # Altera as legendas que aparecem no gráfico para ficar mais amigável
+                    newnames = {col_pp: 'Pontos Pró (PP)', col_pc: 'Pontos Contra (PC)'}
+                    fig.for_each_trace(lambda t: t.update(name = newnames[t.name]))
+                    
                     fig.update_layout(xaxis_tickangle=-45)
                     st.plotly_chart(fig, use_container_width=True)
                     
