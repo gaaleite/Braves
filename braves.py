@@ -95,7 +95,7 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 2) ---
             f4, f5, f6 = st.columns(3)
-            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Braves", key="f_time").strip()
+            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Sub 14", key="f_time").strip()
             busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: SÃO PAULO-SP", key="f_cidade").strip()
             busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv").strip()
             
