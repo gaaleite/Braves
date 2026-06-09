@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy- Gerenciador de Jogos")
 
 # LINK DA SUA PLANILHA (Substitua pelo seu link de compartilhamento)
-URL_NORMAL = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?usp=drive_link"
+URL_NORMAL = "https://docs.google.com/spreadsheets/u/0/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/htmlview?pli=1"
 
 # -------------------------------------------------------------------------
 # FUNÇÃO DE LEITURA DIRETA DO GOOGLE SHEETS VIA PANDAS
