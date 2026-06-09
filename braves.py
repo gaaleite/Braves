@@ -22,7 +22,6 @@ def carregar_aba_google(url_planilha):
             df = df.dropna(how='all')
             
             # ATRIBUIÇÃO FORÇADA PELA POSIÇÃO DAS COLUNAS (K=10, L=11)
-            # Garante que mesmo sem nome no cabeçalho, o script saiba onde estão os pontos
             if len(df.columns) >= 12:
                 df.rename(columns={df.columns[10]: "PP", df.columns[11]: "PC"}, inplace=True)
         return df
@@ -68,9 +67,8 @@ col_jogo = obter_coluna_real(df_todos_jogos, ["jogo", "game"], "JOGO")
 col_time = obter_coluna_real(df_todos_jogos, ["time", "team", "categoria"], "TIME")
 col_cidade = obter_coluna_real(df_todos_jogos, ["cidade", "estado", "cidade-estado"], "CIDADE")
 col_vd = obter_coluna_real(df_todos_jogos, ["v / d", "v/d", "resultado"], "V / D")
-col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário", "opponent"], "ADVERSÁRIO")
+col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário", "opponent"], "ADVERSARIO")
 
-# PP e PC agora possuem nomes fixos garantidos pela função de carga
 col_pp = "PP"
 col_pc = "PC"
 
@@ -102,7 +100,7 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                 st.warning("Nenhum dado encontrado ou a planilha está inacessível. Verifique o compartilhamento.")
             else:
                 st.write("### 🔍 Filtros de Pesquisa")
-                st.caption("Digite nos campos abaixo. O gráfico e a tabela atualizarão instantaneamente.")
+                st.caption("Deixe os campos em branco para ver todos os dados. Digite para filtrar em tempo real.")
                 
                 # --- ORGANIZAÇÃO DOS FILTROS ---
                 f1, f2, f3 = st.columns(3)
@@ -123,6 +121,7 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                 # --- PROCESSAMENTO DOS FILTROS EM TEMPO REAL ---
                 df_filtrado = df_todos_jogos.copy()
                 
+                # CORREÇÃO CRUCIAL: Só aplica o filtro se a caixa NÃO estiver vazia (if busca_...)
                 if busca_data and col_data in df_filtrado.columns:
                     df_filtrado = df_filtrado[df_filtrado[col_data].astype(str).str.upper().str.contains(busca_data.upper(), na=False)]
                 if busca_ano and col_ano in df_filtrado.columns:
@@ -156,9 +155,11 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                     # 1. Gráfico de Barras Dinâmico
                     st.write("### 📈 Gráfico de Pontuação das Partidas")
                     
+                    # Garante que as colunas K e L sejam interpretadas como números para o gráfico funcionar
                     df_filtrado[col_pp] = pd.to_numeric(df_filtrado[col_pp], errors='coerce').fillna(0)
                     df_filtrado[col_pc] = pd.to_numeric(df_filtrado[col_pc], errors='coerce').fillna(0)
                     
+                    # Cria o nome completo da partida para aparecer no eixo vertical (Y)
                     df_filtrado["Partida"] = (
                         "J" + df_filtrado[col_jogo].astype(str) + " - " +
                         df_filtrado[col_time].astype(str) + " vs " +
@@ -179,7 +180,4 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                     
                     # 2. Tabela Oficial Estilizada com Cores (Igual ao Sheets)
                     st.write("### 📋 Tabela de Registros")
-                    
-                    colunas_exibicao = [c for c in colunas_finais if c in df_filtrado.columns]
-                    df_exibir = df_filtrado[colunas_exibicao]
                     
