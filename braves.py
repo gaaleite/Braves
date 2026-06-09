@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves - Gerenciador de Jogos (Google Sheets)")
 
 # LINK DA SUA PLANILHA (Substitua pelo seu link de compartilhamento)
-URL_NORMAL = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?usp=drive_link"
+URL_NORMAL = "COLOQUE_AQUI_O_LINK_DA_SUA_PLANILHA"
 
 # -------------------------------------------------------------------------
 # FUNÇÃO DE LEITURA DIRETA DO GOOGLE SHEETS VIA PANDAS
@@ -17,7 +17,7 @@ URL_NORMAL = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxX
 def carregar_aba_google(url_planilha, nome_aba):
     try:
         base_url = url_planilha.split("/edit")
-        csv_url = f"{base_url[0]}/gviz/tq?tqx=out:csv&sheet={nome_aba.replace(' ', '%20')}"
+        csv_url = f"{base_url}/gviz/tq?tqx=out:csv&sheet={nome_aba.replace(' ', '%20')}"
         df = pd.read_csv(csv_url)
         if not df.empty:
             df.columns = df.columns.str.strip().str.lower()
@@ -74,7 +74,7 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 2) ---
             f4, f5, f6 = st.columns(3)
-            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Sub 14", key="f_time")
+            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Braves", key="f_time")
             busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: São Paulo-SP", key="f_cidade")
             busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv")
             
@@ -110,6 +110,9 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             st.write("### 📈 Gráfico de Desempenho")
             
             if not df_filtrado.empty:
+                # CORREÇÃO DEFINITIVA: Reseta o índice para evitar o erro de labels duplicados
+                df_filtrado = df_filtrado.reset_index(drop=True)
+                
                 # Criação do texto para o Eixo Y (Canto Esquerdo)
                 df_filtrado["Eixo_Esquerdo"] = (
                     df_filtrado["data"].astype(str) + " | " +
