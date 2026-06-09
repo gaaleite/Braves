@@ -68,15 +68,15 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 1) ---
             f1, f2, f3 = st.columns(3)
-            busca_data = f1.text_input("📅 Filtrar por Data", placeholder="Ex: 12/05", key="f_data")
+            busca_data = f1.text_input("🗓 Filtrar por Data", placeholder="Ex: 12/05", key="f_data")
             busca_ano = f2.text_input("📆 Filtrar por Ano", placeholder="Ex: 2025", key="f_ano")
-            busca_jogo = f3.text_input("🎮 Filtrar por Jogo", placeholder="Ex: Jogo 1", key="f_jogo")
+            busca_jogo = f3.text_input("🏈 Filtrar por Jogo", placeholder="Ex: Jogo 1", key="f_jogo")
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 2) ---
             f4, f5, f6 = st.columns(3)
             busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Sub 14", key="f_time")
             busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: São Paulo-SP", key="f_cidade")
-            busca_adversario = f6.text_input("👹 Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv")
+            busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv")
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 3) ---
             f7, f8, f9 = st.columns(3)
