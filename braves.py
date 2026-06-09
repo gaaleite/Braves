@@ -62,11 +62,11 @@ col_data = obter_coluna_real(df_todos_jogos, ["data", "date"]) or "DATA"
 col_ano = obter_coluna_real(df_todos_jogos, ["ano", "year"]) or "ANO"
 col_jogo = obter_coluna_real(df_todos_jogos, ["jogo", "game"]) or "JOGO"
 col_time = obter_coluna_real(df_todos_jogos, ["time", "team"]) or "TIME"
-col_cidade = obter_coluna_real(df_todos_jogos, ["cidade-estado", "cidade", "eatado"]) or "CIDADE", "ESTADO"
-col_vit = obter_coluna_real(df_todos_jogos, ["vitoria", "vitória", "w"]) or "VITORIA"
-col_derr = obter_coluna_real(df_todos_jogos, ["derrota", "l"]) or "DERROTA"
-col_emp = obter_coluna_real(df_todos_jogos, ["empate", "t"]) or "EMPATE"
-col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário", "opponent"]) or "ADVERSARIO"
+col_cidade = obter_coluna_real(df_todos_jogos, ["cidade", "estado"]) or "CIDADE", "ESTADO"
+col_vit = obter_coluna_real(df_todos_jogos, ["vitoria", "vitória", "v"]) or "V"
+col_derr = obter_coluna_real(df_todos_jogos, ["derrota", "d"]) or "D"
+col_emp = obter_coluna_real(df_todos_jogos, ["empate", "e"]) or "E"
+col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário"]) or "ADVERSARIO"
 
 colunas_finais = [col_data, col_ano, col_jogo, col_time, col_cidade, col_vit, col_derr, col_emp, col_adv]
 
@@ -91,19 +91,19 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             f1, f2, f3 = st.columns(3)
             busca_data = f1.text_input("🗓 Filtrar por Data", placeholder="Ex: 12/05", key="f_data").strip()
             busca_ano = f2.text_input("📆 Filtrar por Ano", placeholder="Ex: 2025", key="f_ano").strip()
-            busca_jogo = f3.text_input("🏈 Filtrar por Jogo", placeholder="Ex: Jogo 1", key="f_jogo").strip()
+            busca_jogo = f3.text_input("🏈 Filtrar por Jogo", placeholder="Ex: Amistoso", key="f_jogo").strip()
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 2) ---
             f4, f5, f6 = st.columns(3)
             busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Sub 14", key="f_time").strip()
             busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: SÃO PAULO-SP", key="f_cidade").strip()
-            busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv").strip()
+            busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex:Vikings", key="f_adv").strip()
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 3) ---
             f7, f8, f9 = st.columns(3)
-            busca_vit = f7.text_input("🏆 Filtrar por Vitória (Qtd)", placeholder="Ex: 1", key="f_vit").strip()
-            busca_derr = f8.text_input("❌ Filtrar por Derrota (Qtd)", placeholder="Ex: 0", key="f_derr").strip()
-            busca_emp = f9.text_input("🤝 Filtrar por Empate (Qtd)", placeholder="Ex: 0", key="f_emp").strip()
+            busca_vit = f7.text_input("🏆 Filtrar por Vitória", placeholder="Ex: V", key="f_vit").strip()
+            busca_derr = f8.text_input("❌ Filtrar por Derrota", placeholder="Ex: D", key="f_derr").strip()
+            busca_emp = f9.text_input("🤝 Filtrar por Empate (Qtd)", placeholder="Ex: E", key="f_emp").strip()
             
             # Aplicando os filtros dinâmicos de forma totalmente insensível a maiúsculas/minúsculas
             df_filtrado = df_todos_jogos.copy()
