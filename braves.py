@@ -21,10 +21,8 @@ def carregar_aba_google(url_planilha):
             df.columns = df.columns.str.strip()
             df = df.dropna(how='all')
             
-            # MAPEAMENTO EXATO BASEADO NAS POSIÇÕES INFORMADAS
+            # MAPEAMENTO EXATO CORRIGIDO USANDO SINTAXE DE ÍNDICES [i]
             qtd_colunas = len(df.columns)
-            
-            # Dicionário para renomear colunas por índice físico
             novos_nomes = {}
             if qtd_colunas >= 2:   novos_nomes[df.columns[1]]  = "DATA_INTERNA"
             if qtd_colunas >= 3:   novos_nomes[df.columns[2]]  = "ANO_INTERNA"
@@ -79,7 +77,7 @@ col_adv = "ADVERSARIO_INTERNA"
 
 colunas_finais = [col_data, col_ano, col_jogo, col_time, col_cidade, col_estado, col_vd, col_pp, col_pc, col_adv]
 
-# Garante a existência das colunas para evitar falhas de compilação
+# Garante la existência das colunas para evitar falhas de compilação
 for col in colunas_finais:
     if not df_todos_jogos.empty and col not in df_todos_jogos.columns:
         df_todos_jogos[col] = ""
@@ -151,14 +149,14 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                     df_filtrado[col_pp] = pd.to_numeric(df_filtrado[col_pp], errors='coerce').fillna(0)
                     df_filtrado[col_pc] = pd.to_numeric(df_filtrado[col_pc], errors='coerce').fillna(0)
                     
-                    # Constrói o texto identificador de cada jogo no eixo X de forma limpa
+                    # Constrói o texto identificador de cada jogo no eixo X
                     df_filtrado["Partida"] = (
                         "J" + df_filtrado[col_jogo].astype(str) + " - " +
                         df_filtrado[col_time].astype(str) + " vs " +
                         df_filtrado[col_adv].astype(str)
                     )
                     
-                    # Criação do gráfico em formato de linha contínua
+                    # GERAÇÃO DO GRÁFICO EM FORMATO DE LINHA CONTÍNUA
                     fig = px.line(
                         df_filtrado,
                         x="Partida",
