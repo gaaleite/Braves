@@ -67,28 +67,10 @@ col_jogo = obter_coluna_real(df_todos_jogos, ["jogo", "game"], "JOGO")
 col_time = obter_coluna_real(df_todos_jogos, ["time", "team", "categoria"], "TIME")
 col_cidade = obter_coluna_real(df_todos_jogos, ["cidade", "estado", "cidade-estado"], "CIDADE")
 col_vd = obter_coluna_real(df_todos_jogos, ["v / d", "v/d", "resultado"], "V / D")
-col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário", "opponent"], "ADVERSARIO")
+col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário", "opponent"], "ADVERSÁRIO")
 
 col_pp = "PP"
 col_pc = "PC"
-
-colunas_finais = [col_data, col_ano, col_jogo, col_time, col_cidade, col_vd, col_pp, col_pc, col_adv]
-
-# Garante a existência das colunas para não quebrar a estilização visual
-for col in colunas_finais:
-    if not df_todos_jogos.empty and col not in df_todos_jogos.columns:
-        df_todos_jogos[col] = ""
-
-# FUNÇÃO PARA COLORIR AS LINHAS DA TABELA
-def colorir_linhas(linha):
-    resultado = str(linha[col_vd]).strip().upper() if col_vd in linha else ""
-    if resultado == "V":
-        return ["background-color: rgba(46, 204, 113, 0.25)"] * len(linha)
-    elif resultado == "D":
-        return ["background-color: rgba(231, 76, 60, 0.25)"] * len(linha)
-    elif resultado == "E":
-        return ["background-color: rgba(241, 196, 15, 0.25)"] * len(linha)
-    return [""] * len(linha)
 
 # Renderizar o conteúdo de cada aba
 for i, nome_da_aba in enumerate(st.session_state.lista_abas):
@@ -121,7 +103,6 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                 # --- PROCESSAMENTO DOS FILTROS EM TEMPO REAL ---
                 df_filtrado = df_todos_jogos.copy()
                 
-                # CORREÇÃO CRUCIAL: Só aplica o filtro se a caixa NÃO estiver vazia (if busca_...)
                 if busca_data and col_data in df_filtrado.columns:
                     df_filtrado = df_filtrado[df_filtrado[col_data].astype(str).str.upper().str.contains(busca_data.upper(), na=False)]
                 if busca_ano and col_ano in df_filtrado.columns:
@@ -152,32 +133,32 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                 if not df_filtrado.empty:
                     df_filtrado = df_filtrado.reset_index(drop=True)
                     
-                    # 1. Gráfico de Barras Dinâmico
-                    st.write("### 📈 Gráfico de Pontuação das Partidas")
+                    st.write("### 📈 Linha de Tendência e Pontuação")
                     
-                    # Garante que as colunas K e L sejam interpretadas como números para o gráfico funcionar
                     df_filtrado[col_pp] = pd.to_numeric(df_filtrado[col_pp], errors='coerce').fillna(0)
                     df_filtrado[col_pc] = pd.to_numeric(df_filtrado[col_pc], errors='coerce').fillna(0)
                     
-                    # Cria o nome completo da partida para aparecer no eixo vertical (Y)
+                    # Identificador legível para o eixo X do gráfico (Cronologia dos jogos)
                     df_filtrado["Partida"] = (
                         "J" + df_filtrado[col_jogo].astype(str) + " - " +
                         df_filtrado[col_time].astype(str) + " vs " +
-                        df_filtrado[col_adv].astype(str) + " (" + df_filtrado[col_vd].astype(str) + ")"
+                        df_filtrado[col_adv].astype(str)
                     )
                     
-                    fig = px.bar(
+                    # GERAÇÃO DO GRÁFICO EM FORMATO DE LINHAS (px.line)
+                    fig = px.line(
                         df_filtrado,
-                        y="Partida",
-                        x=[col_pp, col_pc],
-                        orientation="h",
-                        barmode="group",
-                        title="Pontos Feitos vs Pontos Sofridos",
+                        x="Partida",
+                        y=[col_pp, col_pc],
+                        title="Evolução de Pontos Feitos (PP) vs Pontos Sofridos (PC)",
                         color_discrete_map={col_pp: "#2ecc71", col_pc: "#e74c3c"},
-                        labels={"value": "Pontos", "variable": "Tipo de Ponto"}
+                        markers=True, # Adiciona pontos/bolinhas marcadoras em cada jogo da linha
+                        labels={"value": "Pontuação", "Partida": "Histórico de Jogos", "variable": "Indicador"}
                     )
+                    
+                    # Ajustes extras para melhorar a leitura do gráfico de linhas
+                    fig.update_layout(xaxis_tickangle=-45)
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # 2. Tabela Oficial Estilizada com Cores (Igual ao Sheets)
-                    st.write("### 📋 Tabela de Registros")
-                    
+                else:
+                    st.info("Nenhum dado corresponde aos filtros aplicados nas caixas de pesquisa.")
