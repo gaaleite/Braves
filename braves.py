@@ -4,12 +4,12 @@ import
 
 plotly.express
 
- as px
+as px
 
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Gráfico de Jogos")
 
-# LINK DE EXPORTAÇÃO DIRETA
+# LINK OFICIAL DA SUA PLANILHA RESTAURADO
 URL_NORMAL = "https://google.com"
 
 @st.cache_data(ttl=10)
