@@ -96,7 +96,7 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             if busca_time:
                 df_filtrado = df_filtrado[df_filtrado["time"].astype(str).str.contains(busca_time, case=False, na=False)]
             if busca_cidade:
-                df_filtrado = df_filtrado[df_filtrado["cidade-estado"].astype(str).str.contains(busca_cidade, case=False, na-False)]
+                df_filtrado = df_filtrado[df_filtrado["cidade-estado"].astype(str).str.contains(busca_cidade, case=False, na=False)]
             if busca_adversario:
                 df_filtrado = df_filtrado[df_filtrado["adversario"].astype(str).str.contains(busca_adversario, case=False, na=False)]
             if busca_vit:
