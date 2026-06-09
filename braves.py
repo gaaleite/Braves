@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves - Gerenciador de Jogos (Google Sheets)")
 
 # LINK DA SUA PLANILHA (Substitua pelo seu link de compartilhamento)
-URL_NORMAL = "COLOQUE_AQUI_O_LINK_DA_SUA_PLANILHA"
+URL_NORMAL = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?usp=drive_link"
 
 # -------------------------------------------------------------------------
 # FUNÇÃO DE LEITURA DIRETA DO GOOGLE SHEETS VIA PANDAS
@@ -74,7 +74,7 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 2) ---
             f4, f5, f6 = st.columns(3)
-            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Braves", key="f_time")
+            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Sub 14", key="f_time")
             busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: São Paulo-SP", key="f_cidade")
             busca_adversario = f6.text_input("👹 Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv")
             
