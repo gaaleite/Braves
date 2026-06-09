@@ -5,31 +5,40 @@ import plotly.express as px
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 
-st.title("🏈 Braves Academy- Gerenciador de Jogos")
+st.title("🏈 Braves Academy - Gerenciador de Jogos")
 
-# LINK ATUALIZADO: Aponta diretamente para os dados brutos da aba ALL GAMES (gid=2138981609)
+# LINK OFICIAL: Exporta diretamente os dados limpos da planilha
 URL_NORMAL = "https://google.com"
 
 # -------------------------------------------------------------------------
-# FUNÇÃO DE LEITURA DIRETA DO GOOGLE SHEETS VIA PANDAS (CORRIGIDA)
+# FUNÇÃO DE LEITURA DIRETA DO GOOGLE SHEETS
 # -------------------------------------------------------------------------
 @st.cache_data(ttl=10) # Atualiza automaticamente a cada 10 segundos
 def carregar_aba_google(url_planilha):
     try:
-        # Garante o formato de exportação direta em CSV independente do link fornecido
-        if "/htmlview" in url_planilha:
-            url_planilha = url_planilha.split("/htmlview")[0] + "/export?format=csv&gid=2138981609"
-        elif "/edit" in url_planilha:
-            url_planilha = url_planilha.split("/edit")[0] + "/export?format=csv&gid=2138981609"
-            
         df = pd.read_csv(url_planilha)
         if not df.empty:
-            # Remove espaços extras das colunas
             df.columns = df.columns.str.strip()
+            df = df.dropna(how='all')
         return df
     except Exception as e:
         st.error(f"Erro ao conectar com o Google Sheets: {e}")
         return pd.DataFrame()
+
+# -------------------------------------------------------------------------
+# FUNÇÃO PARA COLORIR AS LINHAS DA TABELA BASEADO NA COLUNA "V / D"
+# -------------------------------------------------------------------------
+def colorir_linhas(linha):
+    resultado = str(linha["V / D"]).strip().upper() if "V / D" in linha else ""
+    
+    # Define as cores de fundo em formato RGBA/Hex aceito pelo Pandas/Streamlit
+    if resultado == "V":
+        return ["background-color: rgba(46, 204, 113, 0.25)"] * len(linha)  # Verde Claro
+    elif resultado == "D":
+        return ["background-color: rgba(231, 76, 60, 0.25)"] * len(linha)   # Vermelho Claro
+    elif resultado == "E":
+        return ["background-color: rgba(241, 196, 15, 0.25)"] * len(linha)  # Amarelo Claro
+    return [""] * len(linha)
 
 # -------------------------------------------------------------------------
 # GERENCIAMENTO DOS DADOS EM MEMÓRIA
@@ -37,9 +46,7 @@ def carregar_aba_google(url_planilha):
 if "lista_abas" not in st.session_state:
     st.session_state.lista_abas = ["ALL GAMES"]
 
-# -------------------------------------------------------------------------
 # INTERFACE: ADICIONAR NOVA ABA
-# -------------------------------------------------------------------------
 with st.expander("➕ Adicionar Nova Aba / Categoria"):
     nova_aba_input = st.text_input("Nome da nova aba:", placeholder="Ex: playoffs 25").strip()
     if st.button("Criar Aba"):
@@ -51,42 +58,12 @@ with st.expander("➕ Adicionar Nova Aba / Categoria"):
 # Criação visual das abas no navegador
 tabs = st.tabs(st.session_state.lista_abas)
 
-# Carrega os dados utilizando a nova função estruturada
+# Carrega os dados reais da planilha
 df_todos_jogos = carregar_aba_google(URL_NORMAL)
-
-# MAPEAMENTO DE COLUNAS (Tenta encontrar a coluna mesmo que mude maiúscula/minúscula)
-def obter_coluna_real(df, nomes_possiveis):
-    for nome in nomes_possiveis:
-        for col in df.columns:
-            if col.lower() == nome.lower():
-                return col
-    return None
-
-# Mapeia dinamicamente os nomes das colunas baseado no que está na sua planilha
-col_data = obter_coluna_real(df_todos_jogos, ["data", "date"]) or "DATA"
-col_ano = obter_coluna_real(df_todos_jogos, ["ano", "year"]) or "ANO"
-col_jogo = obter_coluna_real(df_todos_jogos, ["jogo", "game"]) or "JOGO"
-col_time = obter_coluna_real(df_todos_jogos, ["time", "team"]) or "TIME"
-col_cidade = obter_coluna_real(df_todos_jogos, ["cidade", "estado", "cidade-estado"]) or "CIDADE"
-col_vit = obter_coluna_real(df_todos_jogos, ["vitoria", "vitória", "v"]) or "V"
-col_derr = obter_coluna_real(df_todos_jogos, ["derrota", "d"]) or "D"
-col_emp = obter_coluna_real(df_todos_jogos, ["empate", "e"]) or "E"
-col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário"]) or "ADVERSÁRIO"
-
-colunas_finais = [col_data, col_ano, col_jogo, col_time, col_cidade, col_vit, col_derr, col_emp, col_adv]
-
-# Garante que o DataFrame não esteja quebrado caso a planilha falhe na leitura
-if df_todos_jogos.empty:
-    df_todos_jogos = pd.DataFrame(columns=colunas_finais)
-else:
-    for col in colunas_finais:
-        if col not in df_todos_jogos.columns:
-            df_todos_jogos[col] = ""
 
 # Renderizar o conteúdo de cada aba
 for i, nome_da_aba in enumerate(st.session_state.lista_abas):
     with tabs[i]:
-        # LINHA ALTERADA: Removido o prefixo "Painel:" exibindo apenas o nome puro
         st.subheader(nome_da_aba)
         
         if nome_da_aba == "ALL GAMES":
@@ -94,82 +71,89 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                 st.warning("Nenhum dado encontrado ou a planilha está inacessível. Verifique o compartilhamento.")
             else:
                 st.write("### 🔍 Filtros de Pesquisa")
-                st.caption("Digite nos campos abaixo para filtrar o gráfico em tempo real. Deixe em branco para ver todos os dados.")
+                st.caption("Digite nos campos abaixo. O gráfico e a tabela atualizarão instantaneamente.")
                 
-                # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 1) ---
+                # --- ORGANIZAÇÃO DOS FILTROS ---
                 f1, f2, f3 = st.columns(3)
                 busca_data = f1.text_input("🗓 Filtrar por Data", placeholder="Ex: 12/05", key="f_data").strip()
                 busca_ano = f2.text_input("📆 Filtrar por Ano", placeholder="Ex: 2025", key="f_ano").strip()
-                busca_jogo = f3.text_input("🏈 Filtrar por Jogo", placeholder="Ex: Amistoso", key="f_jogo").strip()
+                busca_jogo = f3.text_input("🏈 Filtrar por Jogo (Nº)", placeholder="Ex: 277", key="f_jogo").strip()
                 
-                # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 2) ---
                 f4, f5, f6 = st.columns(3)
-                busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Sub 14", key="f_time").strip()
-                busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: SÃO PAULO-SP", key="f_cidade").strip()
-                busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex: Vikings", key="f_adv").strip()
+                busca_time = f4.text_input("🛡️ Filtrar por Categoria / Time", placeholder="Ex: Sub 14", key="f_time").strip()
+                busca_cidade = f5.text_input("📍 Filtrar por Cidade", placeholder="Ex: São Paulo", key="f_cidade").strip()
+                busca_adversario = f6.text_input("⚔️ Filtrar por Adversário", placeholder="Ex: Fox", key="f_adv").strip()
                 
-                # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 3) ---
                 f7, f8, f9 = st.columns(3)
-                busca_vit = f7.text_input("🏆 Filtrar por Vitória", placeholder="Ex: V", key="f_vit").strip()
-                busca_derr = f8.text_input("❌ Filtrar por Derrota", placeholder="Ex: D", key="f_derr").strip()
-                busca_emp = f9.text_input("🤝 Filtrar por Empate", placeholder="Ex: E", key="f_emp").strip()
+                # O filtro abaixo agora centraliza as pesquisas de resultado (V, D ou E)
+                busca_vd = f7.text_input("🏆 Resultado (V = Vitória, D = Derrota, E = Empate)", placeholder="Ex: V", key="f_vd").strip()
+                busca_pp = f8.text_input("🟢 Pontos Feitos (Mínimo)", placeholder="Ex: 10", key="f_pp").strip()
+                busca_pc = f9.text_input("🔴 Pontos Sofridos (Máximo)", placeholder="Ex: 20", key="f_pc").strip()
                 
-                # Aplicando os filtros dinâmicos
+                # --- PROCESSAMENTO DOS FILTROS EM TEMPO REAL ---
                 df_filtrado = df_todos_jogos.copy()
                 
-                if busca_data:
-                    df_filtrado = df_filtrado[df_filtrado[col_data].astype(str).str.upper().str.contains(busca_data.upper(), na=False)]
-                if busca_ano:
-                    df_filtrado = df_filtrado[df_filtrado[col_ano].astype(str).str.upper().str.contains(busca_ano.upper(), na=False)]
-                if busca_jogo:
-                    df_filtrado = df_filtrado[df_filtrado[col_jogo].astype(str).str.upper().str.contains(busca_jogo.upper(), na=False)]
-                if busca_time:
-                    df_filtrado = df_filtrado[df_filtrado[col_time].astype(str).str.upper().str.contains(busca_time.upper(), na=False)]
-                if busca_cidade:
-                    df_filtrado = df_filtrado[df_filtrado[col_cidade].astype(str).str.upper().str.contains(busca_cidade.upper(), na=False)]
-                if busca_adversario:
-                    df_filtrado = df_filtrado[df_filtrado[col_adv].astype(str).str.upper().str.contains(busca_adversario.upper(), na=False)]
-                if busca_vit:
-                    df_filtrado = df_filtrado[df_filtrado[col_vit].astype(str).str.upper().str.contains(busca_vit.upper(), na=False)]
-                if busca_derr:
-                    df_filtrado = df_filtrado[df_filtrado[col_derr].astype(str).str.upper().str.contains(busca_derr.upper(), na=False)]
-                if busca_emp:
-                    df_filtrado = df_filtrado[df_filtrado[col_emp].astype(str).str.upper().str.contains(busca_emp.upper(), na=False)]
+                if busca_data and "DATA" in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado["DATA"].astype(str).str.upper().str.contains(busca_data.upper(), na=False)]
+                if busca_ano and "ANO" in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado["ANO"].astype(str).str.upper().str.contains(busca_ano.upper(), na=False)]
+                if busca_jogo and "JOGO" in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado["JOGO"].astype(str).str.upper().str.contains(busca_jogo.upper(), na=False)]
+                if busca_time and "TIME" in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado["TIME"].astype(str).str.upper().str.contains(busca_time.upper(), na=False)]
+                if busca_cidade and "CIDADE" in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado["CIDADE"].astype(str).str.upper().str.contains(busca_cidade.upper(), na=False)]
+                if busca_adversario and "ADVERSÁRIO" in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado["ADVERSÁRIO"].astype(str).str.upper().str.contains(busca_adversario.upper(), na=False)]
+                if busca_vd and "V / D" in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado["V / D"].astype(str).str.upper().str.contains(busca_vd.upper(), na=False)]
+                
+                if busca_pp and "PP" in df_filtrado.columns:
+                    df_filtrado["PP"] = pd.to_numeric(df_filtrado["PP"], errors='coerce').fillna(0)
+                    try: df_filtrado = df_filtrado[df_filtrado["PP"] >= float(busca_pp)]
+                    except: pass
+                if busca_pc and "PC" in df_filtrado.columns:
+                    df_filtrado["PC"] = pd.to_numeric(df_filtrado["PC"], errors='coerce').fillna(0)
+                    try: df_filtrado = df_filtrado[df_filtrado["PC"] <= float(busca_pc)]
+                    except: pass
                     
                 st.markdown("---")
-                st.write("### 📈 Gráfico de Desempenho")
                 
+                # --- EXIBIÇÃO DOS RESULTADOS ---
                 if not df_filtrado.empty:
                     df_filtrado = df_filtrado.reset_index(drop=True)
                     
-                    # Monta a legenda do Eixo Y
-                    df_filtrado["Eixo_Esquerdo"] = (
-                        df_filtrado[col_data].astype(str) + " | " +
-                        df_filtrado[col_ano].astype(str) + " | " +
-                        df_filtrado[col_jogo].astype(str) + " | " +
-                        df_filtrado[col_time].astype(str) + " vs " +
-                        df_filtrado[col_adv].astype(str)
+                    # 1. Gráfico de Barras Dinâmico
+                    st.write("### 📈 Gráfico de Pontuação das Partidas")
+                    
+                    df_filtrado["PP"] = pd.to_numeric(df_filtrado["PP"], errors='coerce').fillna(0)
+                    df_filtrado["PC"] = pd.to_numeric(df_filtrado["PC"], errors='coerce').fillna(0)
+                    
+                    df_filtrado["Partida"] = (
+                        "J" + df_filtrado["JOGO"].astype(str) + " - " +
+                        df_filtrado["TIME"].astype(str) + " vs " +
+                        df_filtrado["ADVERSÁRIO"].astype(str) + " (" + df_filtrado["V / D"].astype(str) + ")"
                     )
                     
-                    # Converte colunas para numérico se necessário (ou plota contagem de registros)
-                    colunas_resultado = [col_vit, col_derr, col_emp]
-                    for col in colunas_resultado:
-                        df_filtrado[col] = pd.to_numeric(df_filtrado[col], errors='coerce').fillna(1) # Valor padrão caso usem marcação em texto
-                    
-                    # Renderiza o gráfico de barras horizontais completo
                     fig = px.bar(
                         df_filtrado,
-                        y="Eixo_Esquerdo",
-                        x=[col_vit, col_derr],
+                        y="Partida",
+                        x=["PP", "PC"],
                         orientation="h",
                         barmode="group",
-                        title="Resultados por Partida",
-                        labels={"value": "Status / Quantidade", "Eixo_Esquerdo": "Partidas", "variable": "Resultado"}
+                        title="Pontos Feitos (PP) vs Pontos Sofridos (PC)",
+                        color_discrete_map={"PP": "#2ecc71", "PC": "#e74c3c"},
+                        labels={"value": "Pontos", "variable": "Tipo de Ponto"}
                     )
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Exibe tabela auxiliar com os dados estruturados filtrados
+                    # 2. Tabela Oficial Estilizada com Cores (Igual ao Sheets)
                     st.write("### 📋 Tabela de Registros")
-                    st.dataframe(df_filtrado[colunas_finais], use_container_width=True)
+                    
+                    # Aplica a função de mapeamento de cores linha por linha
+                    df_estilizado = df_filtrado.style.apply(colorir_linhas, axis=1)
+                    
+                    # Renderiza a tabela colorida na tela do app
+                    st.dataframe(df_estilizado, use_container_width=True)
                 else:
-                    st.info("Nenhum dado corresponde aos filtros aplicados.")
+                    st.info("Nenhum dado corresponde aos filtros aplicados nas caixas de pesquisa.")
