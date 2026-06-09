@@ -5,10 +5,10 @@ import plotly.express as px
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 
-st.title("🏈 Braves - Gerenciador de Jogos (Google Sheets)")
+st.title("🏈 Braves Academy- Gerenciador de Jogos")
 
 # LINK DA SUA PLANILHA (Substitua pelo seu link de compartilhamento)
-URL_NORMAL = "COLOQUE_AQUI_O_LINK_DA_SUA_PLANILHA"
+URL_NORMAL = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?usp=drive_link"
 
 # -------------------------------------------------------------------------
 # FUNÇÃO DE LEITURA DIRETA DO GOOGLE SHEETS VIA PANDAS
@@ -20,7 +20,8 @@ def carregar_aba_google(url_planilha, nome_aba):
         csv_url = f"{base_url}/gviz/tq?tqx=out:csv&sheet={nome_aba.replace(' ', '%20')}"
         df = pd.read_csv(csv_url)
         if not df.empty:
-            df.columns = df.columns.str.strip().str.lower()
+            # Remove apenas espaços extras das colunas, mantendo maiúsculas/minúsculas originais
+            df.columns = df.columns.str.strip()
         return df
     except Exception:
         return pd.DataFrame()
@@ -48,12 +49,32 @@ tabs = st.tabs(st.session_state.lista_abas)
 # Carrega os dados da planilha principal
 df_todos_jogos = carregar_aba_google(URL_NORMAL, "ALL GAMES")
 
-# Mapeamento de colunas esperadas para o filtro
-colunas_obrigatorias = ["data", "ano", "jogo", "time", "cidade-estado", "vitoria", "derrota", "empate", "adversario"]
+# MAPEAMENTO DE COLUNAS (Tenta encontrar a coluna mesmo que mude maiúscula/minúscula)
+def obter_coluna_real(df, nomes_possiveis):
+    for nome in nomes_possiveis:
+        for col in df.columns:
+            if col.lower() == nome.lower():
+                return col
+    return None
+
+# Mapeia dinamicamente os nomes das colunas baseado no que está na sua planilha
+col_data = obter_coluna_real(df_todos_jogos, ["data", "date"]) or "DATA"
+col_ano = obter_coluna_real(df_todos_jogos, ["ano", "year"]) or "ANO"
+col_jogo = obter_coluna_real(df_todos_jogos, ["jogo", "game"]) or "JOGO"
+col_time = obter_coluna_real(df_todos_jogos, ["time", "team"]) or "TIME"
+col_cidade = obter_coluna_real(df_todos_jogos, ["cidade-estado", "cidade", "eatado"]) or "CIDADE", "ESTADO"
+col_vit = obter_coluna_real(df_todos_jogos, ["vitoria", "vitória", "w"]) or "VITORIA"
+col_derr = obter_coluna_real(df_todos_jogos, ["derrota", "l"]) or "DERROTA"
+col_emp = obter_coluna_real(df_todos_jogos, ["empate", "t"]) or "EMPATE"
+col_adv = obter_coluna_real(df_todos_jogos, ["adversario", "adversário", "opponent"]) or "ADVERSARIO"
+
+colunas_finais = [col_data, col_ano, col_jogo, col_time, col_cidade, col_vit, col_derr, col_emp, col_adv]
+
+# Garante que o DataFrame não esteja quebrado caso a planilha falhe na leitura
 if df_todos_jogos.empty:
-    df_todos_jogos = pd.DataFrame(columns=colunas_obrigatorias)
+    df_todos_jogos = pd.DataFrame(columns=colunas_finais)
 else:
-    for col in colunas_obrigatorias:
+    for col in colunas_finais:
         if col not in df_todos_jogos.columns:
             df_todos_jogos[col] = ""
 
@@ -68,62 +89,61 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 1) ---
             f1, f2, f3 = st.columns(3)
-            busca_data = f1.text_input("🗓 Filtrar por Data", placeholder="Ex: 12/05", key="f_data")
-            busca_ano = f2.text_input("📆 Filtrar por Ano", placeholder="Ex: 2025", key="f_ano")
-            busca_jogo = f3.text_input("🏈 Filtrar por Jogo", placeholder="Ex: Jogo 1", key="f_jogo")
+            busca_data = f1.text_input("🗓 Filtrar por Data", placeholder="Ex: 12/05", key="f_data").strip()
+            busca_ano = f2.text_input("📆 Filtrar por Ano", placeholder="Ex: 2025", key="f_ano").strip()
+            busca_jogo = f3.text_input("🏈 Filtrar por Jogo", placeholder="Ex: Jogo 1", key="f_jogo").strip()
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 2) ---
             f4, f5, f6 = st.columns(3)
-            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Braves", key="f_time")
-            busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: São Paulo-SP", key="f_cidade")
-            busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv")
+            busca_time = f4.text_input("🛡️ Filtrar por Time", placeholder="Ex: Braves", key="f_time").strip()
+            busca_cidade = f5.text_input("📍 Filtrar por Cidade-Estado", placeholder="Ex: SÃO PAULO-SP", key="f_cidade").strip()
+            busca_adversario = f6.text_input("🛡️💥🛡️ Filtrar por Adversário", placeholder="Ex: Eagles", key="f_adv").strip()
             
             # --- ORGANIZAÇÃO DOS FILTROS DE 3 EM 3 (LINHA 3) ---
             f7, f8, f9 = st.columns(3)
-            busca_vit = f7.text_input("🏆 Filtrar por Vitória (Qtd)", placeholder="Ex: 1", key="f_vit")
-            busca_derr = f8.text_input("❌ Filtrar por Derrota (Qtd)", placeholder="Ex: 0", key="f_derr")
-            busca_emp = f9.text_input("🤝 Filtrar por Empate (Qtd)", placeholder="Ex: 0", key="f_emp")
+            busca_vit = f7.text_input("🏆 Filtrar por Vitória (Qtd)", placeholder="Ex: 1", key="f_vit").strip()
+            busca_derr = f8.text_input("❌ Filtrar por Derrota (Qtd)", placeholder="Ex: 0", key="f_derr").strip()
+            busca_emp = f9.text_input("🤝 Filtrar por Empate (Qtd)", placeholder="Ex: 0", key="f_emp").strip()
             
-            # Aplicando os filtros dinâmicos no DataFrame Pandas
+            # Aplicando os filtros dinâmicos de forma totalmente insensível a maiúsculas/minúsculas
             df_filtrado = df_todos_jogos.copy()
             
             if busca_data:
-                df_filtrado = df_filtrado[df_filtrado["data"].astype(str).str.contains(busca_data, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_data].astype(str).str.upper().str.contains(busca_data.upper(), na=False)]
             if busca_ano:
-                df_filtrado = df_filtrado[df_filtrado["ano"].astype(str).str.contains(busca_ano, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_ano].astype(str).str.upper().str.contains(busca_ano.upper(), na=False)]
             if busca_jogo:
-                df_filtrado = df_filtrado[df_filtrado["jogo"].astype(str).str.contains(busca_jogo, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_jogo].astype(str).str.upper().str.contains(busca_jogo.upper(), na=False)]
             if busca_time:
-                df_filtrado = df_filtrado[df_filtrado["time"].astype(str).str.contains(busca_time, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_time].astype(str).str.upper().str.contains(busca_time.upper(), na=False)]
             if busca_cidade:
-                df_filtrado = df_filtrado[df_filtrado["cidade-estado"].astype(str).str.contains(busca_cidade, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_cidade].astype(str).str.upper().str.contains(busca_cidade.upper(), na=False)]
             if busca_adversario:
-                df_filtrado = df_filtrado[df_filtrado["adversario"].astype(str).str.contains(busca_adversario, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_adv].astype(str).str.upper().str.contains(busca_adversario.upper(), na=False)]
             if busca_vit:
-                df_filtrado = df_filtrado[df_filtrado["vitoria"].astype(str).str.contains(busca_vit, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_vit].astype(str).str.upper().str.contains(busca_vit.upper(), na=False)]
             if busca_derr:
-                df_filtrado = df_filtrado[df_filtrado["derrota"].astype(str).str.contains(busca_derr, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_derr].astype(str).str.upper().str.contains(busca_derr.upper(), na=False)]
             if busca_emp:
-                df_filtrado = df_filtrado[df_filtrado["empate"].astype(str).str.contains(busca_emp, case=False, na=False)]
+                df_filtrado = df_filtrado[df_filtrado[col_emp].astype(str).str.upper().str.contains(busca_emp.upper(), na=False)]
                 
             st.markdown("---")
             st.write("### 📈 Gráfico de Desempenho")
             
             if not df_filtrado.empty:
-                # CORREÇÃO DEFINITIVA: Reseta o índice para evitar o erro de labels duplicados
                 df_filtrado = df_filtrado.reset_index(drop=True)
                 
-                # Criação do texto para o Eixo Y (Canto Esquerdo)
+                # Monta a legenda do Eixo Y usando os nomes mapeados das colunas
                 df_filtrado["Eixo_Esquerdo"] = (
-                    df_filtrado["data"].astype(str) + " | " +
-                    df_filtrado["ano"].astype(str) + " | " +
-                    df_filtrado["jogo"].astype(str) + " | " +
-                    df_filtrado["time"].astype(str) + " | " +
-                    df_filtrado["cidade-estado"].astype(str) + " vs " +
-                    df_filtrado["adversario"].astype(str)
+                    df_filtrado[col_data].astype(str) + " | " +
+                    df_filtrado[col_ano].astype(str) + " | " +
+                    df_filtrado[col_jogo].astype(str) + " | " +
+                    df_filtrado[col_time].astype(str) + " | " +
+                    df_filtrado[col_cidade].astype(str) + " vs " +
+                    df_filtrado[col_adv].astype(str)
                 )
                 
-                colunas_resultado = ["vitoria", "derrota", "empate"]
+                colunas_resultado = [col_vit, col_derr, col_emp]
                 for col in colunas_resultado:
                     df_filtrado[col] = pd.to_numeric(df_filtrado[col], errors='coerce').fillna(0)
                 
@@ -135,14 +155,14 @@ for i, nome_da_aba in enumerate(st.session_state.lista_abas):
                     barmode="group",
                     labels={"value": "Quantidade", "Eixo_Esquerdo": "Informações do Jogo", "variable": "Resultado"},
                     orientation="h",
-                    color_discrete_map={"vitoria": "#2ECC71", "derrota": "#E74C3C", "empate": "#F1C40F"}
+                    color_discrete_map={col_vit: "#2ECC71", col_derr: "#E74C3C", col_emp: "#F1C40F"}
                 )
                 
                 fig.update_layout(yaxis={'categoryorder':'total ascending'}, height=400 + (len(df_filtrado) * 30))
                 st.plotly_chart(fig, use_container_width=True)
                 
                 st.write("#### 📋 Dados Filtrados")
-                st.dataframe(df_filtrado[colunas_obrigatorias], use_container_width=True, hide_index=True)
+                st.dataframe(df_filtrado[colunas_finais], use_container_width=True, hide_index=True)
             else:
                 st.warning("Nenhum dado encontrado com os filtros aplicados ou a planilha está vazia.")
         else:
