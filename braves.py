@@ -46,7 +46,7 @@ st.markdown(
 def carregar_dados():
     try:
         # Link oficial fornecido
-        url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
+        url_original = "https://google.com"
         
         # Correção do link: substituição direta e segura de texto sem gerar listas corrompidas
         url_csv = url_original.replace("/pubhtml", "/pub")
@@ -197,9 +197,9 @@ else:
                     textposition="outside",
                     marker=dict(
                         color=cores_barras,
-                        line=dict(color="#778899", width=1)
+                        line=dict(color="#ccd6f6", width=1)
                     ),
-                    textfont=dict(family="sans-serif", size=10, color="#202122") # Placar em cinza escuro para o fundo claro
+                    textfont=dict(family="sans-serif", size=10, color="#ffffff") # Placar em branco
                 )
             )
 
@@ -210,10 +210,10 @@ else:
                     text=titulo_dinamico,
                     x=0.5,
                     xanchor="center",
-                    font=dict(family="sans-serif", size=14, color="#202122", weight="bold") # Título do gráfico escuro
+                    font=dict(family="sans-serif", size=14, color="#ffffff", weight="bold")
                 ),
-                paper_bgcolor="#f4f4f4",  # 🚨 Alterado: Fundo externo do gráfico em cinza claro
-                plot_bgcolor="#f4f4f4",   # 🚨 Alterado: Fundo interno do gráfico em cinza claro
+                paper_bgcolor="rgba(0,0,0,0)",  # Fundo do gráfico transparente
+                plot_bgcolor="rgba(0,0,0,0)",           
                 margin=dict(l=40, r=40, t=60, b=80),
                 showlegend=False,
                 shapes=[
@@ -221,7 +221,7 @@ else:
                         type="rect",
                         xref="paper", yref="paper",
                         x0=0, y0=0, x1=1, y1=1,
-                        line=dict(color="#a2a9b1", width=1) # Caixa externa cinza clássica
+                        line=dict(color="#ccd6f6", width=1) # Caixa externa cinza sutil
                     )
                 ]
             )
@@ -229,7 +229,11 @@ else:
             fig.update_xaxes(
                 title_text="Temporada / Partida", 
                 tickangle=0,
-                title_font=dict(color="#202122"),
-                tickfont=dict(family="sans-serif", size=10, color="#202122") # Rótulos inferiores em cinza escuro
+                title_font=dict(color="white"),
+                tickfont=dict(family="sans-serif", size=10, color="white") # Eixo em branco
             )
             fig.update_yaxes(showticklabels=False, showgrid=False)
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+        except Exception as e:
