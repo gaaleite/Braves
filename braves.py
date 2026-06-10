@@ -8,6 +8,24 @@ import io
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Painel de Controle")
 
+# Injeta CSS para aplicar o fundo azul-marinho profundo e ajustar os textos para branco
+css_fundo_azul_marinho = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-color: #0a192f; /* Azul-marinho profundo e profissional */
+}
+/* Força títulos e subtextos principais a ficarem brancos */
+h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
+    color: #ffffff !important;
+}
+/* Mantém o texto dentro das caixas de input e selectboxes legível (escuro) */
+input, select {
+    color: #202122 !important;
+}
+</style>
+"""
+st.markdown(css_fundo_azul_marinho, unsafe_allow_html=True)
+
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
