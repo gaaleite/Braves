@@ -149,7 +149,7 @@ else:
         st.markdown("---")
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
-        df_grafico = df_filtrado.copy()
+                df_grafico = df_filtrado.copy()
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
@@ -168,7 +168,7 @@ else:
             else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
-                        try:
+        try:
             fig = go.Figure()
             valores_y = [1] * len(df_grafico)
             
@@ -179,7 +179,7 @@ else:
                     y=valores_y,
                     text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                     textposition="outside",
-                    textfont=dict(size=10, color="#ffffff"),  # Texto do placar menor e visível
+                    textfont=dict(size=10, color="#ffffff"),
                     marker=dict(
                         color=cores_barras,  
                         line=dict(color="#778899", width=1)
@@ -190,25 +190,20 @@ else:
             # Ajustes focados em responsividade e usabilidade mobile
             fig.update_layout(
                 autosize=True,
-                height=350,  # Altura ideal controlada para não esticar no celular
-                margin=dict(l=10, r=10, t=30, b=10),  # Remove margens vazias desnecessárias
+                height=350,
+                margin=dict(l=10, r=10, t=30, b=10),
                 showlegend=False,
-                paper_bgcolor="rgba(0,0,0,0)",  # Fundo transparente para combinar com seu CSS
+                paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                yaxis=dict(showticklabels=False, showgrid=False, fixedrange=True),  # Trava o zoom vertical indesejado
+                yaxis=dict(showticklabels=False, showgrid=False, fixedrange=True),
                 xaxis=dict(
                     tickfont=dict(size=10, color="#ffffff"),
-                    fixedrange=True,  # Evita problemas de scroll acidental no celular
+                    fixedrange=True,
                     type='category'
                 ),
             )
 
-            # Exibe o gráfico adaptando-se dinamicamente ao tamanho da tela (PC ou Celular)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
-        except Exception as e:
-            st.error(f"Erro ao gerar o gráfico dinâmico: {e}")
-
 
         except Exception as e:
             st.error(f"Erro ao gerar o gráfico dinâmico: {e}")
