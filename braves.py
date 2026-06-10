@@ -211,7 +211,7 @@ else:
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 # Garante tamanho de fonte unificado para o texto de dentro das barras, impedindo distorções no celular
-                uniformtext=dict(mode="hide", minsize=11),
+                uniformtext=dict(mode="hide", size=8),
                 yaxis=dict(showticklabels=False, showgrid=False, fixedrange=True),
                 xaxis=dict(
                     tickfont=dict(size=14, color="#ffffff"),
