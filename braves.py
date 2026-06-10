@@ -8,7 +8,7 @@ st.title("🏈 Braves Academy - Painel de Controle")
 # =========================================================================
 # CONFIGURAÇÃO DOS LINKS - INSIRA OS SEUS LINKS AQUI
 # =========================================================================
-URL_LEITURA_CSV = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?gid=0#gid=0"
+URL_LEITURA_CSV = "https://google.com"
 # =========================================================================
 
 @st.cache_data(ttl=5)
@@ -19,7 +19,7 @@ def carregar_dados_posicionais(url):
             qtd_colunas = len(df.columns)
             df_limpo = pd.DataFrame()
             
-            # Mapeamento por índices físicos
+            # Mapeamento por índices físicos do ecossistema Braves
             if qtd_colunas >= 2:   df_limpo["DATA"] = df.iloc[:, 1].astype(str).str.strip()
             if qtd_colunas >= 3:   df_limpo["ANO"] = df.iloc[:, 2].astype(str).str.strip()
             if qtd_colunas >= 4:   df_limpo["JOGO"] = df.iloc[:, 3].astype(str).str.strip()
@@ -87,47 +87,52 @@ if not df_jogos.empty:
         total_pp = int(df_filtrado["PP"].sum())
         total_pc = int(df_filtrado["PC"].sum())
         
-        m1.metric(label="Total de Partidas", value=f"{total_jogos}")
+        m1.metric(label="Total de Partidas Filtradas", value=f"{total_jogos}", delta=f"De {len(df_jogos)} totais")
         m2.metric(label="Pontos Pró Consolidados (PP)", value=f"{total_pp}", delta="Pontos Feitos", delta_color="normal")
         m3.metric(label="Pontos Contra Consolidados (PC)", value=f"{total_pc}", delta="- Pontos Sofridos", delta_color="inverse")
         
         st.markdown("---")
         
-        # --- CONSTRUÇÃO DO GRÁFICO AVANÇADO (BARRAS + LINHA DE TENDÊNCIA DO PRINT) ---
-        st.write("### 📈 Histórico Dinâmico de Atividade")
+        # --- PREPARAÇÃO DOS DADOS PARA O GRÁFICO DE ALTA DENSIDADE ---
+        # Criamos uma linha do tempo unificada (Data/Ano) para agrupar o volume e não quebrar o layout com 277 barras individuais
+        df_filtrado["Periodo"] = df_filtrado["DATA"] + "/" + df_filtrado["ANO"]
         
-        # Legenda limpa para o eixo X
-        df_filtrado["Partida"] = "J" + df_filtrado["JOGO"] + " - " + df_filtrado["TIME"]
+        # Agrupamos por período contando a atividade de jogos e tirando a média/soma de pontos
+        df_agrupado = df_filtrado.groupby("Periodo").agg(
+            Qtd_Jogos=("JOGO", "count"),
+            Media_PP=("PP", "mean"),
+            Total_PC=("PC", "sum")
+        ).reset_index()
+        
+        # --- CONSTRUÇÃO DO GRÁFICO AVANÇADO (BARRAS DE ATIVIDADE + LINHA TENDÊNCIA) ---
+        st.write("### 📈 Histórico Dinâmico de Atividade (Agrupado por Período)")
         
         fig = go.Figure()
         
-        # 1. Adiciona as Barras Empilhadas por Adversário (Cores dinâmicas como no print)
-        adversarios_unicos = df_filtrado["ADVERSARIO"].unique()
-        for adv in list(adversarios_unicos):
-            df_adv = df_filtrado[df_filtrado["ADVERSARIO"] == adv]
-            fig.add_trace(go.Bar(
-                name=f"vs {adv}",
-                x=df_adv["Partida"],
-                y=df_adv["PC"],  # Volume das barras baseado nos Pontos Contra
-                text=df_adv["PC"],
-                textposition='inside',
-                hovertemplate="Adversário: %{data.name}<br>Pontos Contra: %{y}<extra></extra>"
-            ))
+        # 1. Barras azuis translúcidas representando o volume/frequência de jogos no período (Igual ao print)
+        fig.add_trace(go.Bar(
+            name="Quantidade de Jogos",
+            x=df_agrupado["Periodo"],
+            y=df_agrupado["Qtd_Jogos"],
+            marker_color='#7cb5ec',
+            text=df_agrupado["Qtd_Jogos"],
+            textposition='auto',
+            hovertemplate="Período: %{x}<br>Total de Jogos: %{y}<extra></extra>"
+        ))
         
-        # 2. Adiciona a Linha Tracejada de Tendência Escura cruzando o topo (Igual ao print)
+        # 2. Linha de tendência escura cruzando as barras no topo para indicar evolução de performance (Igual ao print)
         fig.add_trace(go.Scatter(
-            name="Tendência de PP",
-            x=df_filtrado["Partida"],
-            y=df_filtrado["PP"],
+            name="Média de Pontos Pró (PP)",
+            x=df_agrupado["Periodo"],
+            y=df_agrupado["Media_PP"],
             mode='lines+markers',
             line=dict(color='#2c3e50', width=2, dash='dash'),
             marker=dict(size=6, color='#2c3e50'),
-            hovertemplate="Evolução PP: %{y}<extra></extra>"
+            hovertemplate="Média PP: %{y:.1f}<extra></extra>"
         ))
         
-        # Customização do Layout para replicar a estética limpa do print
+        # Estilização profissional idêntica à do print fornecido
         fig.update_layout(
-            barmode='stack', # Garante o empilhamento das barras coloridas
             plot_bgcolor='white',
             paper_bgcolor='white',
             hovermode="x unified",
@@ -135,14 +140,14 @@ if not df_jogos.empty:
             margin=dict(l=40, r=40, t=40, b=80),
             xaxis=dict(
                 showgrid=True, 
-                gridcolor='#f0f0f0', 
+                gridcolor='#f5f5f5', 
                 tickangle=-45,
-                title="Linha do Tempo de Jogos"
+                title="Linha do Tempo (Data/Ano)"
             ),
             yaxis=dict(
                 showgrid=True, 
-                gridcolor='#f0f0f0',
-                title="Volume de Pontuação"
+                gridcolor='#f5f5f5',
+                title="Volume"
             )
         )
         
