@@ -130,7 +130,7 @@ else:
     if busca_vd:
         df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
 
-        st.markdown("---")
+            st.markdown("---")
 
     if not df_filtrado.empty:
         df_filtrado = df_filtrado.reset_index(drop=True)
@@ -153,9 +153,16 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
-        df_grafico["Rotulo_Jogo"] = (
-            "Jogo " + df_grafico["JOGO"] + "<br>" + 
-            df_grafico["DATA"]
+        # Rótulo simplificado para o eixo X
+        df_grafico["Rotulo_Jogo"] = "Jg " + df_grafico["JOGO"]
+
+        # Texto detalhado que aparece de forma linda ao tocar/passar o mouse na barra
+        df_grafico["Texto_Hover"] = (
+            "<b>Jogo " + df_grafico["JOGO"] + "</b><br>" +
+            "📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>" +
+            "🛡️ Categoria: " + df_grafico["FAIXA_ETARIA"] + "<br>" +
+            "⚔️ Adversário: " + df_grafico["ADVERSARIO"] + "<br>" +
+            "🏆 Placar: " + df_grafico["PP"].astype(str) + " x " + df_grafico["PC"].astype(str)
         )
 
         # Lógica para definir a cor de cada barra individualmente com base no placar
@@ -175,10 +182,12 @@ else:
             fig.add_trace(
                 go.Bar(
                     name="Jogos",
-                    x=[df_grafico["ANO"], df_grafico["Rotulo_Jogo"]],
+                    x=df_grafico["Rotulo_Jogo"],
                     y=valores_y,
                     text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                     textposition="outside",
+                    textfont=dict(size=11, color="#ffffff"),
+                    hovertemplate=df_grafico["Texto_Hover"] + "<extra></extra>", # Customização do toque
                     marker=dict(
                         color=cores_barras,
                         line=dict(color="#778899", width=1)
@@ -186,12 +195,36 @@ else:
                 )
             )
             
-            # Força os textos de baixo a ficarem retos na horizontal
+            # Configuração responsiva inteligente
             fig.update_layout(
-                xaxis=dict(tickangle=0)
+                autosize=True,
+                height=320,
+                margin=dict(l=10, r=10, t=30, b=40),
+                showlegend=False,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=dict(showticklabels=False, showgrid=False, fixedrange=True),
+                xaxis=dict(
+                    tickfont=dict(size=11, color="#ffffff"),
+                    tickangle=0,
+                    fixedrange=True,
+                    type='category'
+                ),
             )
             
-            st.plotly_chart(fig)
+            # Injeta uma regra CSS para esconder os nomes do eixo X exclusivamente em telas pequenas (Celular)
+            css_responsivo_grafico = """
+            <style>
+            @media (max-width: 768px) {
+                g.xtick text {
+                    display: none !important;
+                }
+            }
+            </style>
+            """
+            st.markdown(css_responsivo_grafico, unsafe_allow_html=True)
+            
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
         except Exception as e:
             st.error(f"Erro ao gerar o gráfico dinâmico: {e}")
