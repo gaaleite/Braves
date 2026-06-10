@@ -8,31 +8,13 @@ import io
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Painel de Controle")
 
-# Injeta CSS para aplicar o fundo azul-marinho, textos brancos e o título vermelho escuro com contorno branco
+# Injeta CSS para aplicar o fundo azul-marinho profundo e ajustar as fontes do painel
 css_painel = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #0a192f; /* Azul-marinho profundo */
+    background-color: #0d1b2a; /* Lindo tom de azul-marinho fechado */
 }
-/* Estilização exclusiva do título principal */
-.titulo-warriors {
-    color: #8b0000 !important; /* Vermelho escuro */
-    font-size: 2.8rem;
-    font-weight: bold;
-    font-family: 'sans-serif';
-    /* Cria o efeito de contorno/borda branca ao redor do texto */
-    text-shadow: 
-        -2px -2px 0 #ffffff,  
-         2px -2px 0 #ffffff,
-        -2px  2px 0 #ffffff,
-         2px  2px 0 #ffffff,
-        -2px  0px 0 #ffffff,
-         2px  0px 0 #ffffff,
-         0px -2px 0 #ffffff,
-         0px  2px 0 #ffffff;
-    margin-bottom: 20px;
-}
-/* Força subtextos principais a ficarem brancos */
+/* Força subtextos e indicadores padrão a ficarem brancos */
 h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
@@ -43,6 +25,31 @@ input, select {
 </style>
 """
 st.markdown(css_painel, unsafe_allow_html=True)
+
+# Título customizado com correção estrita de cor (vermelho escuro e contorno branco) usando estilo inline forçado
+st.markdown(
+    """
+    <h1 style="
+        color: #8b0000 !important; 
+        font-size: 2.8rem; 
+        font-weight: bold; 
+        font-family: 'sans-serif'; 
+        text-shadow: 
+            -2px -2px 0 #ffffff,  
+             2px -2px 0 #ffffff,
+            -2px  2px 0 #ffffff,
+             2px  2px 0 #ffffff,
+            -2px  0px 0 #ffffff,
+             2px  0px 0 #ffffff,
+             0px -2px 0 #ffffff,
+             0px  2px 0 #ffffff;
+        margin-bottom: 20px;
+    ">
+    🏈 Braves Academy - Painel de Controle
+    </h1>
+    """, 
+    unsafe_allow_html=True
+)
 
 @st.cache_data(ttl=5)
 def carregar_dados():
