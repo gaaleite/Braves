@@ -9,22 +9,30 @@ st.title("🏈 Braves Academy - Painel de Controle")
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
-        # Link público direto formatado para exportação CSV do Google Sheets
-        url_csv = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
+        # Link público original no formato HTML fornecido no seu script inicial
+        url_html = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
-        # Carrega o CSV usando a primeira linha como cabeçalho de colunas
-        df = pd.read_csv(url_csv, on_bad_lines="skip")
-
-        if df.empty:
+        # Lê todas as tabelas HTML contidas na página publicada
+        tabelas = pd.read_html(url_html, header=1)
+        
+        if not tabelas:
             return pd.DataFrame()
+            
+        # Captura a tabela principal de dados (geralmente a primeira da página do Sheets)
+        df = tabelas[0]
 
-        # Remove espaços em branco dos nomes das colunas para evitar erros de digitação
-        df.columns = df.columns.str.strip()
+        # Limpa os nomes das colunas removendo espaços extras
+        df.columns = df.columns.astype(str).str.strip()
+
+        # Remove colunas fantasmas geradas pelo índice lateral do Google Sheets (Ex: '1', '2', 'Unnamed: 0')
+        colunas_validas = [c for c in df.columns if not c.isdigit() and "Unnamed" not in c]
+        df = df[colunas_validas]
 
         df_limpo = pd.DataFrame()
 
-        # Mapeamento dinâmico baseado nos nomes reais das colunas da planilha do Google Drive
-        df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip() # Mantém por índice caso mude o nome do ID
+        # Mapeamento dinâmico baseado nos nomes literais das colunas do seu Google Sheets
+        if len(df.columns) > 0:
+            df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
         
         if "DATA" in df.columns:
             df_limpo["DATA"] = df["DATA"].astype(str).str.strip()
@@ -40,24 +48,43 @@ def carregar_dados():
             df_limpo["CIDADE"] = df["CIDADE"].astype(str).str.strip()
         if "ESTADO" in df.columns:
             df_limpo["ESTADO"] = df["ESTADO"].astype(str).str.strip()
+            
+        # Tratamento flexível para variações no nome da coluna de resultado
         if "V / D / E" in df.columns:
             df_limpo["VD"] = df["V / D / E"].astype(str).str.upper().str.strip()
         elif "VD" in df.columns:
             df_limpo["VD"] = df["VD"].astype(str).str.upper().str.strip()
-        else:
+        elif len(df.columns) >= 9:
             df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
 
-        # Captura segura de Pontos Pró, Pontos Contra e Adversário pelos nomes oficiais da planilha
-        pp_col = "PP" if "PP" in df.columns else df.columns[10]
-        pc_col = "PC" if "PC" in df.columns else df.columns[11]
-        adv_col = "ADVERSÁRIO" if "ADVERSÁRIO" in df.columns else ("ADVERSARIO" if "ADVERSARIO" in df.columns else df.columns[12])
+        # Identificação inteligente das colunas de pontuação e adversário
+        pp_col = "PP" if "PP" in df.columns else (df.columns[10] if len(df.columns) >= 11 else None)
+        pc_col = "PC" if "PC" in df.columns else (df.columns[11] if len(df.columns) >= 12 else None)
+        
+        if "ADVERSÁRIO" in df.columns:
+            adv_col = "ADVERSÁRIO"
+        elif "ADVERSARIO" in df.columns:
+            adv_col = "ADVERSARIO"
+        else:
+            adv_col = df.columns[12] if len(df.columns) >= 13 else None
 
-        # Conversão direta e segura para número inteiro
-        df_limpo["PP"] = pd.to_numeric(df[pp_col], errors="coerce").fillna(0).astype(int)
-        df_limpo["PC"] = pd.to_numeric(df[pc_col], errors="coerce").fillna(0).astype(int)
-        df_limpo["ADVERSARIO"] = df[adv_col].astype(str).str.strip()
+        # Processamento e conversão de valores numéricos de forma estável
+        if pp_col:
+            df_limpo["PP"] = pd.to_numeric(df[pp_col], errors="coerce").fillna(0).astype(int)
+        else:
+            df_limpo["PP"] = 0
 
-        # Filtra apenas as linhas válidas onde o ID do jogo contém números
+        if pc_col:
+            df_limpo["PC"] = pd.to_numeric(df[pc_col], errors="coerce").fillna(0).astype(int)
+        else:
+            df_limpo["PC"] = 0
+
+        if adv_col:
+            df_limpo["ADVERSARIO"] = df[adv_col].astype(str).str.strip()
+        else:
+            df_limpo["ADVERSARIO"] = "Desconhecido"
+
+        # Garante que apenas linhas correspondentes a jogos válidos entrem no painel
         df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
 
         return df_limpo.reset_index(drop=True)
@@ -66,28 +93,28 @@ def carregar_dados():
         st.error(f"Erro ao processar dados da tabela: {e}")
         return pd.DataFrame()
 
-# Executa a carga dos dados
+# Executa a carga dos dados do painel
 df_jogos = carregar_dados()
 
-# Verifica se os dados foram carregados com sucesso
+# Validação do estado do DataFrame
 if df_jogos.empty:
     st.error("⚠️ Não foi possível ler os dados da planilha. Verifique se o link está correto e público no Google Drive.")
 else:
     st.write("### 🔍 Filtros de Pesquisa")
 
-    # Primeira linha de filtros
+    # Primeira linha de filtros por entrada de texto
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
     busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
     busca_categoria = f3.text_input("🛡️ Categoria", placeholder="Ex: Adulto").strip()
 
-    # Segunda linha de filtros
+    # Segunda linha de filtros por entrada de texto
     f4, f5, f6 = st.columns(3)
     busca_cidade = f4.text_input("📍 Nossa Cidade", placeholder="Ex: São Paulo").strip()
     busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Locomotives").strip()
     busca_vd = f6.text_input("🏆 Resultado (V / D / E)", placeholder="Ex: V").strip()
 
-    # Aplicação dos filtros no DataFrame original
+    # Criação do DataFrame filtrado em tempo real
     df_filtrado = df_jogos.copy()
 
     if busca_data:
@@ -105,7 +132,7 @@ else:
 
     st.markdown("---")
 
-    # Se houver dados correspondentes aos filtros, renderiza os componentes
+    # Inicialização dos blocos visuais caso existam dados filtrados
     if not df_filtrado.empty:
         df_filtrado = df_filtrado.reset_index(drop=True)
 
@@ -123,7 +150,7 @@ else:
         st.markdown("---")
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
-        # Preparação dos dados para o gráfico em ordem cronológica reversa
+        # Ajuste de ordenação cronológica reversa baseado no ID numérico do jogo
         df_grafico = df_filtrado.copy()
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
@@ -136,7 +163,7 @@ else:
         try:
             fig = go.Figure()
             
-            # Geração do gráfico estilo censo/Wikipédia com correção na dimensão Y
+            # Geração do gráfico de blocos verticais fixados em unidade única (Y=1)
             fig.add_trace(
                 go.Bar(
                     name="Jogos",
@@ -181,7 +208,7 @@ else:
         except Exception as e:
             st.error(f"Erro ao renderizar o gráfico: {e}")
         
-        # Visualização da tabela de conferência
+        # Exibição estruturada da tabela de dados
         st.write("### 📋 Tabela de Dados Filtrada")
         colunas_exibicao = ["ID_JOGO", "DATA", "ANO", "TORNEIO", "CATEGORIA", "CIDADE", "VD", "PP", "PC", "ADVERSARIO"]
         st.dataframe(df_filtrado[colunas_exibicao], use_container_width=True)
