@@ -4,6 +4,37 @@ import plotly.graph_objects as go
 import urllib.request
 import io
 
+# Função técnica para converter a imagem local em formato aceito pelo CSS do Streamlit
+def carregar_imagem_fundo(caminho_imagem):
+    try:
+        with open(caminho_imagem, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        return encoded_string
+    except:
+        return None
+
+# Carrega a imagem salva na mesma pasta do script
+img_base64 = carregar_imagem_fundo("logo_warriors.jpg")
+
+if img_base64:
+    # Injeta o CSS customizado para fixar a imagem centralizada com opacidade sutil ao fundo
+    css_fundo = f"""
+    <style>
+    [data-testid="stAppViewContainer"] {{
+        background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url("data:image/jpg;base64,{img_base64}");
+        background-size: 550px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-attachment: fixed;
+    }}
+    /* Garante que os blocos de filtros e tabelas fiquem limpos por cima do fundo */
+    [data-testid="stHeader"] {{
+        background: rgba(0,0,0,0);
+    }}
+    </style>
+    """
+    st.markdown(css_fundo, unsafe_allow_html=True)
+
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Painel de Controle")
