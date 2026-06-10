@@ -8,7 +8,7 @@ st.title("🏈 Braves Academy - Painel de Controle")
 # =========================================================================
 # LINK OFICIAL DA SUA PLANILHA
 # =========================================================================
-URL_LEITURA_CSV = "https://google.com"
+URL_LEITURA_CSV = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?gid=0#gid=0"
 # =========================================================================
 
 @st.cache_data(ttl=5)
