@@ -153,10 +153,16 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
-        # Rótulo simplificado para o eixo X
-        df_grafico["Rotulo_Jogo"] = "Jg " + df_grafico["JOGO"]
+        # Rótulo minimalista para o eixo X de modo a não poluir as telas menores
+        df_grafico["Rotulo_EixoX"] = "Jg " + df_grafico["JOGO"]
 
-        # Texto detalhado que aparece de forma linda ao tocar/passar o mouse na barra
+        # Constrói o texto interno quebrando linhas: Placar em cima e Data embaixo
+        df_grafico["Texto_Coluna"] = (
+            "<b>" + df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str) + "</b><br>" + 
+            "<span style='font-size:9px; opacity:0.8;'>" + df_grafico["DATA"] + "</span>"
+        )
+
+        # Texto detalhado estruturado para a caixinha preta ao tocar nas barras
         df_grafico["Texto_Hover"] = (
             "<b>Jogo " + df_grafico["JOGO"] + "</b><br>" +
             "📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>" +
@@ -182,12 +188,13 @@ else:
             fig.add_trace(
                 go.Bar(
                     name="Jogos",
-                    x=df_grafico["Rotulo_Jogo"],
+                    x=df_grafico["Rotulo_EixoX"],
                     y=valores_y,
-                    text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
-                    textposition="outside",
+                    text=df_grafico["Texto_Coluna"],
+                    textposition="inside", # Coloca o placar e data 100% dentro da barra
+                    insidetextanchor="middle", # Mantém o texto centralizado na coluna
                     textfont=dict(size=11, color="#ffffff"),
-                    hovertemplate=df_grafico["Texto_Hover"] + "<extra></extra>", # Customização do toque
+                    hovertemplate=df_grafico["Texto_Hover"] + "<extra></extra>",
                     marker=dict(
                         color=cores_barras,
                         line=dict(color="#778899", width=1)
@@ -195,14 +202,16 @@ else:
                 )
             )
             
-            # Configuração responsiva inteligente
+            # Ajustes estruturais e estabilização de tamanho de letra
             fig.update_layout(
                 autosize=True,
-                height=320,
-                margin=dict(l=10, r=10, t=30, b=40),
+                height=350,
+                margin=dict(l=10, r=10, t=20, b=30),
                 showlegend=False,
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
+                # Garante tamanho de fonte unificado para o texto de dentro das barras, impedindo distorções no celular
+                uniformtext=dict(mode="hide", minsize=9),
                 yaxis=dict(showticklabels=False, showgrid=False, fixedrange=True),
                 xaxis=dict(
                     tickfont=dict(size=11, color="#ffffff"),
@@ -212,7 +221,7 @@ else:
                 ),
             )
             
-            # Injeta uma regra CSS para esconder os nomes do eixo X exclusivamente em telas pequenas (Celular)
+            # Remove as letras do eixo X (Jg X) apenas no celular, preservando no computador
             css_responsivo_grafico = """
             <style>
             @media (max-width: 768px) {
@@ -228,6 +237,7 @@ else:
 
         except Exception as e:
             st.error(f"Erro ao gerar o gráfico dinâmico: {e}")
+
 
 
             titulo_dinamico = f"Evolução de Atividade — Total de {len(df_grafico)} Partidas Realizadas"
