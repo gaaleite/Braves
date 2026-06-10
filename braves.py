@@ -193,7 +193,7 @@ else:
                     text=df_grafico["Texto_Coluna"],
                     textposition="inside", # Coloca o placar e data 100% dentro da barra
                     insidetextanchor="middle", # Mantém o texto centralizado na coluna
-                    textfont=dict(size=11, color="#ffffff"),
+                    textfont=dict(size=14, color="#ffffff"),
                     hovertemplate=df_grafico["Texto_Hover"] + "<extra></extra>",
                     marker=dict(
                         color=cores_barras,
