@@ -130,7 +130,7 @@ else:
     if busca_vd:
         df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
 
-        st.markdown("---")
+            st.markdown("---")
 
     if not df_filtrado.empty:
         df_filtrado = df_filtrado.reset_index(drop=True)
@@ -168,7 +168,7 @@ else:
             else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
-                    try:
+        try:
             fig = go.Figure()
             valores_y = [1] * len(df_grafico)
             
@@ -180,18 +180,17 @@ else:
                     text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                     textposition="outside",
                     marker=dict(
-                        color=cores_barras,  # Aplica a lista dinâmica de cores desenvolvida acima
+                        color=cores_barras,
                         line=dict(color="#778899", width=1)
                     )
                 )
             )
             
-            # Força as legendas de baixo a ficarem totalmente na horizontal (padrão de leitura)
+            # Força os textos de baixo a ficarem retos na horizontal
             fig.update_layout(
                 xaxis=dict(tickangle=0)
             )
             
-            # Exibe o gráfico original exatamente como estava antes
             st.plotly_chart(fig)
 
         except Exception as e:
