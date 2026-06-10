@@ -53,7 +53,7 @@ def carregar_dados():
 
         # Mapeamento estrito baseado nas colunas reais da imagem enviada
         if qtd_colunas >= 1:
-            df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
+            df_limpo["JOGO"] = df.iloc[:, 0].astype(str).str.strip()
         if qtd_colunas >= 2:
             df_limpo["DATA"] = df.iloc[:, 1].astype(str).str.strip()
         if qtd_colunas >= 3:
@@ -154,7 +154,7 @@ else:
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
         df_grafico["Rotulo_Jogo"] = (
-            "Jogo " + df_grafico["ID_JOGO"] + "<br>" + 
+            "Jogo " + df_grafico["JOGO"] + "<br>" + 
             df_grafico["DATA"]
         )
 
@@ -224,7 +224,7 @@ else:
             st.error(f"Erro ao renderizar o gráfico: {e}")
         
         st.write("### 📋 Tabela de Dados Filtrada")
-        colunas_exibicao = ["ID_JOGO", "DATA", "ANO", "TORNEIO", "FAIXA_ETARIA", "CATEGORIA", "CIDADE", "VD", "PP", "PC", "ADVERSARIO"]
+        colunas_exibicao = ["JOGO", "DATA", "ANO", "TORNEIO", "FAIXA_ETARIA", "CATEGORIA", "CIDADE", "VD", "PP", "PC", "ADVERSARIO"]
         st.dataframe(df_filtrado[colunas_exibicao], use_container_width=True)
         
     else:
