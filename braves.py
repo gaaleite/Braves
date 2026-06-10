@@ -132,7 +132,6 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
-        # 🚨 Alterado: Mantém apenas "Jogo X" e a data embaixo de cada barra, removendo o adversário
         df_grafico["Rotulo_Jogo"] = (
             "Jogo " + df_grafico["ID_JOGO"] + "<br>" + 
             df_grafico["DATA"]
@@ -177,7 +176,13 @@ else:
                 ]
             )
             
-            fig.update_xaxes(title_text="Temporada / Partida", tickangle=0)
+            # 🚨 Alterado: adicionado tickfont com color="black" para fixar os rótulos inferiores em preto puro
+            fig.update_xaxes(
+                title_text="Temporada / Partida", 
+                tickangle=0,
+                title_font=dict(color="black"),
+                tickfont=dict(family="sans-serif", size=10, color="black")
+            )
             fig.update_yaxes(showticklabels=False, showgrid=False)
             
             st.plotly_chart(fig, use_container_width=True)
