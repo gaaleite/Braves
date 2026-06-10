@@ -130,7 +130,7 @@ else:
     if busca_vd:
         df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
 
-            st.markdown("---")
+        st.markdown("---")
 
     if not df_filtrado.empty:
         df_filtrado = df_filtrado.reset_index(drop=True)
