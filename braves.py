@@ -6,7 +6,6 @@ import io
 
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
-st.title("🏈 Braves Academy - Painel de Controle")
 
 # Injeta CSS para aplicar o fundo azul-marinho profundo e ajustar as fontes do painel
 css_painel = """
