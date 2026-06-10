@@ -154,7 +154,7 @@ else:
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
         # Rótulo minimalista para o eixo X de modo a não poluir as telas menores
-        df_grafico["Rotulo_EixoX"] = "Jg " + df_grafico["JOGO"]
+        df_grafico["Rotulo_EixoX"] = "Jogo " + df_grafico["JOGO"]
 
         # Constrói o texto interno quebrando linhas: Placar em cima e Data embaixo
         df_grafico["Texto_Coluna"] = (
