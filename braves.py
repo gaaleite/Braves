@@ -214,7 +214,7 @@ else:
                 uniformtext=dict(mode="hide", minsize=9),
                 yaxis=dict(showticklabels=False, showgrid=False, fixedrange=True),
                 xaxis=dict(
-                    tickfont=dict(size=11, color="#ffffff"),
+                    tickfont=dict(size=14, color="#ffffff"),
                     tickangle=0,
                     fixedrange=True,
                     type='category'
