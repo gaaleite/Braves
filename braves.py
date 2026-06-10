@@ -224,21 +224,21 @@ else:
             # Remove as letras do eixo X (Jg X) apenas no celular, preservando no computador
             css_responsivo_grafico = """
             <style>
-            @media (max-width: 768px) {
-                /* Esconde os textos do eixo X */
-                g.xtick text {
-                    display: none !important;
-                }
-                /* Remove as margens e paddings laterais do bloco do Streamlit no celular */
-                [data-testid="stColumn"], [data-testid="stHorizontalBlock"], .stMainBlockContainer {
-                    padding-left: 0px !important;
-                    padding-right: 0px !important;
-                    margin-left: 0px !important;
-                    margin-right: 0px !important;
-                }
-            }
-            </style>
-            """
+@media (max-width: 768px) {
+    /* Esconde os textos do eixo X */
+    g.xtick text {
+        display: none !important;
+    }
+    /* Adiciona um leve espaço de respiro nas laterais do celular */
+    [data-testid="stColumn"], [data-testid="stHorizontalBlock"], .stMainBlockContainer {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+    }
+}
+</style>
+"""
             st.markdown(css_responsivo_grafico, unsafe_allow_html=True)
             
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
