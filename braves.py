@@ -225,8 +225,16 @@ else:
             css_responsivo_grafico = """
             <style>
             @media (max-width: 768px) {
+                /* Esconde os textos do eixo X */
                 g.xtick text {
                     display: none !important;
+                }
+                /* Remove as margens e paddings laterais do bloco do Streamlit no celular */
+                [data-testid="stColumn"], [data-testid="stHorizontalBlock"], .stMainBlockContainer {
+                    padding-left: 0px !important;
+                    padding-right: 0px !important;
+                    margin-left: 0px !important;
+                    margin-right: 0px !important;
                 }
             }
             </style>
