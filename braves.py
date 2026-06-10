@@ -196,8 +196,8 @@ else:
                     xanchor="center",
                     font=dict(family="sans-serif", size=14, color="#202122", weight="bold")
                 ),
-                paper_bgcolor="#B0C4DE",          
-                plot_bgcolor="#B0C4DE",           
+                paper_bgcolor="#A0C4FF",          
+                plot_bgcolor="#A0C4FF",           
                 margin=dict(l=40, r=40, t=60, b=80),
                 showlegend=False,
                 shapes=[
