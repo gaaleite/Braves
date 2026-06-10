@@ -14,8 +14,10 @@ def carregar_dados():
         # Link oficial fornecido
         url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
-        # Converte o link pubhtml para o formato de exportação CSV limpo aceito pelo Pandas
-        url_csv = url_original.replace("/pubhtml", "/pub").split("?") + "?gid=516798055&single=true&output=csv"
+        # Correção do link: substituição direta e segura de texto sem gerar listas corrompidas
+        url_csv = url_original.replace("/pubhtml", "/pub")
+        if "&output=csv" not in url_csv:
+            url_csv += "&output=csv"
         
         # Faz a requisição simulando um navegador para evitar bloqueios de segurança do Google
         req = urllib.request.Request(url_csv, headers={'User-Agent': 'Mozilla/5.0'})
@@ -103,7 +105,7 @@ else:
     if busca_cidade:
         df_filtrado = df_filtrado[df_filtrado["CIDADE"].str.upper().str.contains(busca_cidade.upper(), na=False)]
     if busca_adversario:
-        df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na-False)]
+        df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na=False)]
     if busca_vd:
         df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
 
@@ -137,6 +139,7 @@ else:
 
         try:
             fig = go.Figure()
+            # Correção: Geração explícita da lista para evitar erros de sintaxe ocultos
             valores_y = [1] * len(df_grafico)
             
             fig.add_trace(
