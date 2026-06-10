@@ -12,50 +12,53 @@ def carregar_dados():
         # Link público direto formatado para exportação CSV do Google Sheets
         url_csv = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
-        # Carrega o arquivo tratando linhas corrompidas
-        df = pd.read_csv(url_csv, header=None, on_bad_lines="skip")
+        # Carrega o CSV usando a primeira linha como cabeçalho de colunas
+        df = pd.read_csv(url_csv, on_bad_lines="skip")
 
         if df.empty:
             return pd.DataFrame()
 
-        qtd_colunas = len(df.columns)
+        # Remove espaços em branco dos nomes das colunas para evitar erros de digitação
+        df.columns = df.columns.str.strip()
+
         df_limpo = pd.DataFrame()
 
-        # Mapeamento exato baseado na estrutura oficial de colunas da planilha
-        if qtd_colunas >= 1:
-            df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
-        if qtd_colunas >= 2:
-            df_limpo["DATA"] = df.iloc[:, 1].astype(str).str.strip()
-        if qtd_colunas >= 3:
-            df_limpo["ANO"] = df.iloc[:, 2].astype(str).str.strip()
-        if qtd_colunas >= 4:
-            df_limpo["TORNEIO"] = df.iloc[:, 3].astype(str).str.strip()
-        if qtd_colunas >= 5:
-            df_limpo["CATEGORIA"] = df.iloc[:, 4].astype(str).str.strip()
-        if qtd_colunas >= 6:
-            df_limpo["LOCAL"] = df.iloc[:, 5].astype(str).str.strip()
-        if qtd_colunas >= 7:
-            df_limpo["CIDADE"] = df.iloc[:, 6].astype(str).str.strip()
-        if qtd_colunas >= 8:
-            df_limpo["ESTADO"] = df.iloc[:, 7].astype(str).str.strip()
-        if qtd_colunas >= 9:
-            df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
-        if qtd_colunas >= 11:
-            df_limpo["PP_RAW"] = df.iloc[:, 10].astype(str).str.strip()
-        if qtd_colunas >= 12:
-            df_limpo["PC_RAW"] = df.iloc[:, 11].astype(str).str.strip()
-        if qtd_colunas >= 13:
-            df_limpo["ADVERSARIO"] = df.iloc[:, 12].astype(str).str.strip()
-
-        # Filtra apenas as linhas onde o ID do jogo é numérico válido
-        df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
-
-        # Conversão numérica de pontos de forma segura
-        df_limpo["PP"] = pd.to_numeric(df_limpo["PP_RAW"], errors="coerce").fillna(0).astype(int)
-        df_limpo["PC"] = pd.to_numeric(df_limpo["PC_RAW"], errors="coerce").fillna(0).astype(int)
+        # Mapeamento dinâmico baseado nos nomes reais das colunas da planilha do Google Drive
+        df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip() # Mantém por índice caso mude o nome do ID
         
-        # Remove as colunas temporárias de texto bruto
-        df_limpo = df_limpo.drop(columns=["PP_RAW", "PC_RAW"])
+        if "DATA" in df.columns:
+            df_limpo["DATA"] = df["DATA"].astype(str).str.strip()
+        if "ANO" in df.columns:
+            df_limpo["ANO"] = df["ANO"].astype(str).str.strip()
+        if "TORNEIO" in df.columns:
+            df_limpo["TORNEIO"] = df["TORNEIO"].astype(str).str.strip()
+        if "CATEGORIA" in df.columns:
+            df_limpo["CATEGORIA"] = df["CATEGORIA"].astype(str).str.strip()
+        if "LOCAL" in df.columns:
+            df_limpo["LOCAL"] = df["LOCAL"].astype(str).str.strip()
+        if "CIDADE" in df.columns:
+            df_limpo["CIDADE"] = df["CIDADE"].astype(str).str.strip()
+        if "ESTADO" in df.columns:
+            df_limpo["ESTADO"] = df["ESTADO"].astype(str).str.strip()
+        if "V / D / E" in df.columns:
+            df_limpo["VD"] = df["V / D / E"].astype(str).str.upper().str.strip()
+        elif "VD" in df.columns:
+            df_limpo["VD"] = df["VD"].astype(str).str.upper().str.strip()
+        else:
+            df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
+
+        # Captura segura de Pontos Pró, Pontos Contra e Adversário pelos nomes oficiais da planilha
+        pp_col = "PP" if "PP" in df.columns else df.columns[10]
+        pc_col = "PC" if "PC" in df.columns else df.columns[11]
+        adv_col = "ADVERSÁRIO" if "ADVERSÁRIO" in df.columns else ("ADVERSARIO" if "ADVERSARIO" in df.columns else df.columns[12])
+
+        # Conversão direta e segura para número inteiro
+        df_limpo["PP"] = pd.to_numeric(df[pp_col], errors="coerce").fillna(0).astype(int)
+        df_limpo["PC"] = pd.to_numeric(df[pc_col], errors="coerce").fillna(0).astype(int)
+        df_limpo["ADVERSARIO"] = df[adv_col].astype(str).str.strip()
+
+        # Filtra apenas as linhas válidas onde o ID do jogo contém números
+        df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
 
         return df_limpo.reset_index(drop=True)
 
