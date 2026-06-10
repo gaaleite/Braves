@@ -1,31 +1,31 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit_gsheets import SheetsConnection
+import requests
+import json
 
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Painel de Controle")
 
-# Configuração da conexão com o Google Sheets
-# Nota: Requer configuração de service_account no .streamlit/secrets.toml para escrita
-try:
-    conn = st.connection("gsheets", type=SheetsConnection)
-except Exception:
-    conn = None
+# =========================================================================
+# CONFIGURAÇÃO DOS LINKS - INSIRA OS SEUS LINKS AQUI
+# =========================================================================
+# Link de leitura (deve terminar com /export?format=csv para o pandas ler direto)
+URL_LEITURA_CSV = "https://google.com"
 
-@st.cache_data(ttl=10)
-def carregar_dados_posicionais():
-    if conn is None:
-        return pd.DataFrame()
+# Link do Google Apps Script gerado no Passo 1
+URL_GRAVACAO_SCRIPT = "https://google.com"
+# =========================================================================
+
+@st.cache_data(ttl=5)
+def carregar_dados_posicionais(url):
     try:
-        # Lê os dados em tempo real usando a conexão oficial do Streamlit
-        df = conn.read(ttl="10s")
-        
+        df = pd.read_csv(url, on_bad_lines='skip')
         if not df.empty:
             qtd_colunas = len(df.columns)
             df_limpo = pd.DataFrame()
             
-            # Mapeamento exato baseado nos seus índices físicos (ajustados para 0)
+            # Mapeamento exato por índices físicos do seu ecossistema
             if qtd_colunas >= 2:   df_limpo["DATA"] = df.iloc[:, 1].astype(str).str.strip()
             if qtd_colunas >= 3:   df_limpo["ANO"] = df.iloc[:, 2].astype(str).str.strip()
             if qtd_colunas >= 4:   df_limpo["JOGO"] = df.iloc[:, 3].astype(str).str.strip()
@@ -38,7 +38,7 @@ def carregar_dados_posicionais():
             if qtd_colunas >= 12:  df_limpo["PC"] = pd.to_numeric(df.iloc[:, 11], errors='coerce').fillna(0)
             if qtd_colunas >= 13:  df_limpo["ADVERSARIO"] = df.iloc[:, 12].astype(str).str.strip()
             
-            # Limpeza contra scripts e nulos
+            # Limpezas nativas anti-ruído
             df_limpo = df_limpo[~df_limpo["JOGO"].str.contains(r"\{|function|var|index|void|call|html", case=False, na=True)]
             df_limpo = df_limpo[df_limpo["JOGO"] != "nan"]
             df_limpo = df_limpo[df_limpo["JOGO"] != ""]
@@ -46,17 +46,16 @@ def carregar_dados_posicionais():
             return df_limpo.reset_index(drop=True)
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Erro na conexão com os dados: {e}")
+        st.error(f"Erro ao carregar dados: {e}")
         return pd.DataFrame()
 
-# Carrega os dados para o gráfico
-df_jogos = carregar_dados_posicionais()
+df_jogos = carregar_dados_posicionais(URL_LEITURA_CSV)
 
-# --- CRIAÇÃO DAS ABAS ---
+# Criação das Abas Estáveis
 aba_graficos, aba_adicionar = st.tabs(["📊 Gráfico de Jogos", "➕ Adicionar Novo Jogo"])
 
 # ==========================================
-# CONTEÚDO DA ABA 1: GRÁFICOS
+# ABA 1: GRÁFICOS E FILTROS
 # ==========================================
 with aba_graficos:
     if not df_jogos.empty:
@@ -111,19 +110,18 @@ with aba_graficos:
             fig.update_layout(xaxis_tickangle=-45)
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("Nenhum dado corresponde aos filtros.")
+            st.info("Nenhum dado corresponde aos filtros aplicados.")
     else:
-        st.warning("Aguardando conexão ou configuração das credenciais do Sheets.")
+        st.warning("Verifique o link da sua planilha ou aguarde o carregamento.")
 
 # ==========================================
-# CONTEÚDO DA ABA 2: FORMULÁRIO DE CADASTRO
+# ABA 2: FORMULÁRIO (GRAVAÇÃO INTERNA VIA API)
 # ==========================================
 with aba_adicionar:
     st.write("### 📝 Cadastrar Nova Partida")
-    st.caption("Preencha os campos abaixo para salvar as informações diretamente na planilha do Google.")
-
-    # Criação do formulário estruturado por colunas
-    with st.form(key="formulario_jogo", clear_on_submit=True):
+    st.caption("Insira os dados para salvar diretamente no Google Sheets de forma instantânea.")
+    
+    with st.form(key="form_cadastro_nativo", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
         input_data = c1.text_input("🗓 Data do Jogo", placeholder="Ex: 12/05")
         input_ano = c2.text_input("📆 Ano", placeholder="Ex: 2026")
@@ -132,53 +130,44 @@ with aba_adicionar:
         c4, c5, c6 = st.columns(3)
         input_time = c4.text_input("🛡️ Categoria / Nosso Time", placeholder="Ex: Sub 14")
         input_adversario = c5.text_input("⚔️ Adversário", placeholder="Ex: Fox")
-        input_vd = c6.selectbox("🏆 Resultado", ["V", "D", "E"], help="V = Vitória, D = Derrota, E = Empate")
+        input_vd = c6.selectbox("🏆 Resultado", ["V", "D", "E"])
         
-        c7, c8, c9 = st.columns(3)
+        c7, c8 = st.columns(2)
         input_cidade = c7.text_input("📍 Cidade", placeholder="Ex: Sorocaba")
         input_estado = c8.text_input("🏳️ Estado (UF)", placeholder="Ex: SP", max_chars=2)
         
-        c10, c11 = st.columns(2)
-        input_pp = c10.number_input("🟢 Pontos Pró (PP)", min_value=0, step=1, value=0)
-        input_pc = c11.number_input("🔴 Pontos Contra (PC)", min_value=0, step=1, value=0)
+        c9, c10 = st.columns(2)
+        input_pp = c9.number_input("🟢 Pontos Pró (PP)", min_value=0, step=1, value=0)
+        input_pc = c10.number_input("🔴 Pontos Contra (PC)", min_value=0, step=1, value=0)
         
-        # Botão de envio
-        botao_salvar = st.form_submit_button(label="💾 Salvar no Google Sheets")
+        botao_enviar = st.form_submit_button("💾 Salvar no Google Sheets")
         
-        if botao_salvar:
+        if botao_enviar:
             if not input_jogo or not input_time or not input_adversario:
                 st.error("⚠️ Os campos 'Número do Jogo', 'Time' e 'Adversário' são obrigatórios!")
-            elif conn is None:
-                st.error("❌ Conexão com o Google Sheets não configurada.")
             else:
+                # Prepara o payload estruturado para o Apps Script
+                payload = {
+                    "data": input_data,
+                    "ano": input_ano,
+                    "jogo": input_jogo,
+                    "time": input_time,
+                    "cidade": input_cidade,
+                    "estado": input_estado,
+                    "vd": input_vd,
+                    "pp": int(input_pp),
+                    "pc": int(input_pc),
+                    "adversario": input_adversario
+                }
+                
                 try:
-                    # Carrega a planilha bruta atual
-                    df_atual = conn.read()
+                    with st.spinner("Enviando dados para a nuvem..."):
+                        resposta = requests.post(URL_GRAVACAO_SCRIPT, data=json.dumps(payload))
                     
-                    # Cria a nova linha respeitando a ordem exata das suas colunas na planilha original:
-                    # Índice 0: ID/Vazio, 1: DATA, 2: ANO, 3: JOGO, 4: TIME, 5: Vazio, 6: CIDADE, 7: ESTADO, 8: VD, 9: Vazio, 10: PP, 11: PC, 12: ADVERSARIO
-                    nova_linha = {
-                        df_atual.columns[1]: input_data,
-                        df_atual.columns[2]: input_ano,
-                        df_atual.columns[3]: input_jogo,
-                        df_atual.columns[4]: input_time,
-                        df_atual.columns[6]: input_cidade,
-                        df_atual.columns[7]: input_estado,
-                        df_atual.columns[8]: input_vd,
-                        df_atual.columns[10]: input_pp,
-                        df_atual.columns[11]: input_pc,
-                        df_atual.columns[12]: input_adversario
-                    }
-                    
-                    # Converte em DataFrame e concatena
-                    df_nova_linha = pd.DataFrame([nova_linha])
-                    df_atualizado = pd.concat([df_atual, df_nova_linha], ignore_index=True)
-                    
-                    # Grava de volta na nuvem
-                    conn.update(data=df_atualizado)
-                    
-                    st.success("✅ Partida adicionada com sucesso! O gráfico será atualizado.")
-                    st.cache_data.clear() # Limpa o cache para forçar a releitura do gráfico
-                    
-                except Exception as e:
-                    st.error(f"Erro ao salvar dados no Google Sheets: {e}")
+                    if resposta.status_code == 200:
+                        st.success("✅ Partida adicionada com sucesso no Google Sheets!")
+                        st.cache_data.clear() # Reseta o cache para puxar o jogo recém-salvo no gráfico
+                    else:
+                        st.error(f"Erro no servidor Google (Status {resposta.status_code}). Verifique a implantação do Script.")
+                except Exception as erro_req:
+                    st.error(f"Falha de comunicação: {erro_req}")
