@@ -14,7 +14,7 @@ def carregar_dados():
         # ID da sua planilha extraído do seu link original
         spreadsheet_id = "1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo"
         # URL da API pública de tabelas do Google para ler dados limpos estruturados
-        url_json = f"https://google.com{spreadsheet_id}/gviz/tq?tqx=out:json&gid=516798055"
+        url_json = f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
         # Requisição segura dos dados brutos em formato JSON
         req = urllib.request.Request(url_json, headers={'User-Agent': 'Mozilla/5.0'})
