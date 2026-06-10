@@ -132,14 +132,14 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
+        # 🚨 Alterado: Mantém apenas "Jogo X" e a data embaixo de cada barra, removendo o adversário
         df_grafico["Rotulo_Jogo"] = (
             "Jogo " + df_grafico["ID_JOGO"] + "<br>" + 
-            df_grafico["DATA"] + "<br>vs " + df_grafico["ADVERSARIO"]
+            df_grafico["DATA"]
         )
 
         try:
             fig = go.Figure()
-            # Correção: Geração explícita da lista para evitar erros de sintaxe ocultos
             valores_y = [1] * len(df_grafico)
             
             fig.add_trace(
