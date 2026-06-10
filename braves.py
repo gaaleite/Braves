@@ -11,14 +11,18 @@ st.title("🏈 Braves Academy - Painel de Controle")
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
-        # Link oficial em formato CSV limpo
-        url_csv = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
+        # Link oficial fornecido
+        url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
+        # Converte o link pubhtml para o formato de exportação CSV limpo aceito pelo Pandas
+        url_csv = url_original.replace("/pubhtml", "/pub").split("?")[0] + "?gid=516798055&single=true&output=csv"
+        
+        # Faz a requisição simulando um navegador para evitar bloqueios de segurança do Google
         req = urllib.request.Request(url_csv, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
             dados_brutos = response.read()
             
-        # Carrega o arquivo tratando as linhas (header=None para controlar os índices manualmente)
+        # Lê o arquivo tratando o cabeçalho pelas posições das colunas (header=None) para controle total
         df = pd.read_csv(io.BytesIO(dados_brutos), header=None, on_bad_lines="skip")
         
         if df.empty:
@@ -27,7 +31,7 @@ def carregar_dados():
         qtd_colunas = len(df.columns)
         df_limpo = pd.DataFrame()
 
-        # Mapeamento baseado EXATAMENTE nos índices visuais da sua imagem da planilha
+        # Mapeamento estrito baseado nas colunas reais da imagem enviada
         if qtd_colunas >= 1:
             df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
         if qtd_colunas >= 2:
@@ -37,7 +41,7 @@ def carregar_dados():
         if qtd_colunas >= 4:
             df_limpo["TORNEIO"] = df.iloc[:, 3].astype(str).str.strip()
         if qtd_colunas >= 5:
-            df_limpo["FAIXA_ETARIA"] = df.iloc[:, 4].astype(str).str.strip() # Coluna "TIME" (Adulto, Sub 14)
+            df_limpo["FAIXA_ETARIA"] = df.iloc[:, 4].astype(str).str.strip() # Coluna "TIME" (Adulto, Sub 17, etc.)
         if qtd_colunas >= 6:
             df_limpo["CATEGORIA"] = df.iloc[:, 5].astype(str).str.strip() # Coluna "CATEGORIA" (5x5, 6x6)
         if qtd_colunas >= 7:
@@ -47,24 +51,21 @@ def carregar_dados():
         if qtd_colunas >= 9:
             df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
         
-        # Correção do erro: extrai e converte como série do Pandas diretamente do DataFrame original (df)
-        if qtd_colunas >= 11:
-            df_limpo["PP"] = pd.to_numeric(df.iloc[:, 10], errors="coerce").fillna(0).astype(int)
-        else:
-            df_limpo["PP"] = 0
-            
-        if qtd_colunas >= 12:
-            df_limpo["PC"] = pd.to_numeric(df.iloc[:, 11], errors="coerce").fillna(0).astype(int)
-        else:
-            df_limpo["PC"] = 0
+        # Extrai os dados em formato de texto isoladamente antes de convertê-los em números
+        pp_raw = df.iloc[:, 10].astype(str).str.strip() if qtd_colunas >= 11 else "0"
+        pc_raw = df.iloc[:, 11].astype(str).str.strip() if qtd_colunas >= 12 else "0"
         
         if qtd_colunas >= 13:
             df_limpo["ADVERSARIO"] = df.iloc[:, 12].astype(str).str.strip()
         else:
             df_limpo["ADVERSARIO"] = "Desconhecido"
 
-        # Remove cabeçalhos textuais filtrando apenas as linhas onde a primeira coluna é um número
+        # Remove a linha de títulos (onde a primeira coluna diz "JOGO") mantendo apenas IDs numéricos válidos
         df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
+
+        # Converte placares com segurança apenas para as linhas numéricas válidas filtradas
+        df_limpo["PP"] = pd.to_numeric(pp_raw.loc[df_limpo.index], errors="coerce").fillna(0).astype(int)
+        df_limpo["PC"] = pd.to_numeric(pc_raw.loc[df_limpo.index], errors="coerce").fillna(0).astype(int)
 
         return df_limpo.reset_index(drop=True)
 
@@ -72,14 +73,15 @@ def carregar_dados():
         st.error(f"Erro ao processar dados da tabela: {e}")
         return pd.DataFrame()
 
-# Carregamento principal dos dados
+# Chamada principal de processamento dos dados
 df_jogos = carregar_dados()
 
 if df_jogos.empty:
-    st.error("⚠️ O banco de dados retornou vazio. Verifique se a planilha contém linhas válidas com IDs numéricos.")
+    st.error("⚠️ O banco de dados retornou vazio. Verifique se o link foi publicado corretamente no menu do Drive.")
 else:
     st.write("### 🔍 Filtros de Pesquisa")
 
+    # Filtros estruturados em colunas paralelas
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
     busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
