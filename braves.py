@@ -7,14 +7,14 @@ import io
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 
-# Injeta CSS para aplicar o fundo azul-marinho profundo e ajustar as fontes do painel
-css_painel = """
+# Injeta CSS para aplicar o fundo azul-marinho profundo e ajustar os textos para branco
+css_fundo_azul_marinho = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #0d1b2a; /* Tom de azul-marinho fechado */
+    background-color: #0a192f; /* Azul-marinho profundo e profissional */
 }
-/* Força subtextos e indicadores padrão a ficarem brancos */
-h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
+/* Força títulos e subtextos principais a ficarem brancos */
+h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
 /* Mantém o texto dentro das caixas de input e selectboxes legível (escuro) */
@@ -23,30 +23,15 @@ input, select {
 }
 </style>
 """
-st.markdown(css_painel, unsafe_allow_html=True)
+st.markdown(css_fundo_azul_marinho, unsafe_allow_html=True)
 
-# Título customizado com corte 100% nítido usando borda nativa em vez de sombra acumulada
-st.markdown(
-    """
-    <h1 style="
-        color: #8b0000 !important; 
-        font-size: 2.8rem; 
-        font-weight: bold; 
-        font-family: 'sans-serif'; 
-        -webkit-text-stroke: 1.5px #ffffff; /* Borda branca fina e perfeitamente nítida */
-        margin-bottom: 20px;
-    ">
-    🏈 Braves Academy - Painel de Controle
-    </h1>
-    """, 
-    unsafe_allow_html=True
-)
+st.title("🏈 Braves Academy - Painel de Controle")
 
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
         # Link oficial fornecido
-        url_original = "https://google.com"
+        url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
         # Correção do link: substituição direta e segura de texto sem gerar listas corrompidas
         url_csv = url_original.replace("/pubhtml", "/pub")
@@ -197,7 +182,7 @@ else:
                     textposition="outside",
                     marker=dict(
                         color=cores_barras,
-                        line=dict(color="#ccd6f6", width=1)
+                        line=dict(color="#ccd6f6", width=1) # Borda cinza-clara sutil para acabamento das barras
                     ),
                     textfont=dict(family="sans-serif", size=10, color="#ffffff") # Placar em branco
                 )
@@ -212,7 +197,7 @@ else:
                     xanchor="center",
                     font=dict(family="sans-serif", size=14, color="#ffffff", weight="bold")
                 ),
-                paper_bgcolor="rgba(0,0,0,0)",  # Fundo do gráfico transparente
+                paper_bgcolor="rgba(0,0,0,0)",  # Torna o fundo do gráfico transparente para adotar o azul-marinho
                 plot_bgcolor="rgba(0,0,0,0)",           
                 margin=dict(l=40, r=40, t=60, b=80),
                 showlegend=False,
@@ -221,7 +206,7 @@ else:
                         type="rect",
                         xref="paper", yref="paper",
                         x0=0, y0=0, x1=1, y1=1,
-                        line=dict(color="#ccd6f6", width=1) # Caixa externa cinza sutil
+                        line=dict(color="#ccd6f6", width=1) # Caixa externa do infobox em cinza-claro
                     )
                 ]
             )
@@ -230,10 +215,14 @@ else:
                 title_text="Temporada / Partida", 
                 tickangle=0,
                 title_font=dict(color="white"),
-                tickfont=dict(family="sans-serif", size=10, color="white") # Eixo em branco
+                tickfont=dict(family="sans-serif", size=10, color="white") # Textos do eixo em branco
             )
             fig.update_yaxes(showticklabels=False, showgrid=False)
             
             st.plotly_chart(fig, use_container_width=True)
             
         except Exception as e:
+            st.error(f"Erro ao renderizar o gráfico: {e}")
+        
+        st.write("### 📋 Tabela de Dados Filtrada")
+        colunas_exibicao = ["ID_JOGO", "DATA", "ANO", "TORNEIO", "FAIXA_ETARIA", "CATEGORIA", "CIDADE", "VD", "PP", "PC", "ADVERSARIO"]
