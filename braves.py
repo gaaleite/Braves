@@ -6,7 +6,7 @@ st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Painel de Controle")
 
 # =========================================================================
-# LINK OFICIAL DA SUA PLANILHA
+# LINK OFICIAL DA SUA PLANILHA (IDs ajustados para exportação direta)
 # =========================================================================
 URL_LEITURA_CSV = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli51YxXgD0LcFIVUEFIT6sDg/edit?gid=0#gid=0"
 # =========================================================================
@@ -14,30 +14,34 @@ URL_LEITURA_CSV = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli
 @st.cache_data(ttl=5)
 def carregar_dados_posicionais(url):
     try:
-        # Lê o CSV bruto sem assumir nenhuma linha como cabeçalho de texto fixo
-        df = pd.read_csv(url, header=None, on_bad_lines='skip')
+        # Lê o arquivo CSV ignorando as duas primeiras linhas institucionais de título
+        df = pd.read_csv(url, skiprows=1, on_bad_lines='skip')
         if not df.empty:
+            qtd_colunas = len(df.columns)
             df_limpo = pd.DataFrame()
             
-            # --- MAPEAMENTO POR ÍNDICES CRUS DAS COLUNAS (A=0, B=1, C=2...) ---
-            # Filtramos e atribuímos apenas se a linha possuir dados suficientes
-            df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()       # Coluna A (Ex: 277)
-            df_limpo["DATA"] = df.iloc[:, 1].astype(str).str.strip()          # Coluna B (Ex: 07/06/2026)
-            df_limpo["ANO"] = df.iloc[:, 2].astype(str).str.strip()           # Coluna C (Ex: 2026)
-            df_limpo["TORNEIO"] = df.iloc[:, 3].astype(str).str.strip()       # Coluna D (Ex: Amistoso)
-            df_limpo["CATEGORIA"] = df.iloc[:, 4].astype(str).str.strip()      # Coluna E (Ex: Adulto)
-            df_limpo["CIDADE"] = df.iloc[:, 6].astype(str).str.strip()         # Coluna G (Ex: São Paulo)
-            df_limpo["ESTADO"] = df.iloc[:, 7].astype(str).str.strip()         # Coluna H (Ex: SP)
-            df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip() # Coluna I (Ex: V)
+            # --- MAPEAMENTO SEGURO POR ÍNDICES CRUS (A=0, B=1, C=2...) ---
+            if qtd_colunas >= 1:   df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
+            if qtd_colunas >= 2:   df_limpo["DATA"] = df.iloc[:, 1].astype(str).str.strip()
+            if qtd_colunas >= 3:   df_limpo["ANO"] = df.iloc[:, 2].astype(str).str.strip()
+            if qtd_colunas >= 4:   df_limpo["TORNEIO"] = df.iloc[:, 3].astype(str).str.strip()
+            if qtd_colunas >= 5:   df_limpo["CATEGORIA"] = df.iloc[:, 4].astype(str).str.strip()
+            if qtd_colunas >= 7:   df_limpo["CIDADE"] = df.iloc[:, 6].astype(str).str.strip()
+            if qtd_colunas >= 8:   df_limpo["ESTADO"] = df.iloc[:, 7].astype(str).str.strip()
+            if qtd_colunas >= 9:   df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
             
             # Colunas de Pontuação Tratadas Numericamente de Forma Segura (K=10 e L=11)
-            df_limpo["PP"] = pd.to_numeric(df.iloc[:, 10], errors='coerce').fillna(0).astype(int)
-            df_limpo["PC"] = pd.to_numeric(df.iloc[:, 11], errors='coerce').fillna(0).astype(int)
+            if qtd_colunas >= 11:  df_limpo["PP"] = pd.to_numeric(df.iloc[:, 10], errors='coerce').fillna(0).astype(int)
+            if qtd_colunas >= 12:  df_limpo["PC"] = pd.to_numeric(df.iloc[:, 11], errors='coerce').fillna(0).astype(int)
             
-            df_limpo["ADVERSARIO"] = df.iloc[:, 12].astype(str).str.strip()    # Coluna M (Ex: Crimson Fox)
+            if qtd_colunas >= 13:  df_limpo["ADVERSARIO"] = df.iloc[:, 12].astype(str).str.strip()
             
-            # --- LIMPEZA DE LINHAS INSTITUCIONAIS ---
-            # Mantém apenas linhas onde a primeira coluna seja um número de jogo válido (ex: '277', '276')
+            # --- LIMPEZA DE LINHAS CABEÇALHO ---
+            # Remove valores nulos ou que contenham lixo textual do próprio cabeçalho original
+            df_limpo = df_limpo[df_limpo["ID_JOGO"] != "nan"]
+            df_limpo = df_limpo[df_limpo["ID_JOGO"] != "JOGO"]
+            
+            # Mantém apenas as linhas onde o identificador possui o ID numérico dos 277 jogos
             df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
             
             return df_limpo.reset_index(drop=True)
@@ -99,21 +103,19 @@ if not df_jogos.empty:
         # --- CONSTRUÇÃO DO GRÁFICO (BARRAS AGRUPADAS POR MES/ANO) ---
         st.write("### 📈 Histórico Dinâmico de Atividade")
         
-        # Corta a string da data para obter o mês (ex: '07/06/2026' -> '06/2026')
+        # Ajusta a string da data de forma segura para criar a linha do tempo agrupada (Mês/Ano)
         df_filtrado["Periodo"] = df_filtrado["DATA"].str.slice(3, 5) + "/" + df_filtrado["ANO"]
         
-        # Consolida para o formato agrupado do gráfico do print
         df_agrupado = df_filtrado.groupby("Periodo").agg(
             Qtd_Jogos=("ID_JOGO", "count"),
             Media_PP=("PP", "mean")
         ).reset_index()
         
-        # Ordena cronologicamente invertido ou normal se necessário
         df_agrupado = df_agrupado.sort_values("Periodo")
         
         fig = go.Figure()
         
-        # Barras de volume de partidas (Igual ao print)
+        # Barras de volume de partidas
         fig.add_trace(go.Bar(
             name="Volume de Jogos",
             x=df_agrupado["Periodo"],
@@ -124,7 +126,7 @@ if not df_jogos.empty:
             hovertemplate="Período: %{x}<br>Jogos Realizados: %{y}<extra></extra>"
         ))
         
-        # Linha de tendência escura cruzando por cima (Igual ao print)
+        # Linha de tendência de desempenho
         fig.add_trace(go.Scatter(
             name="Tendência de Pontos Pró (Média PP)",
             x=df_agrupado["Periodo"],
