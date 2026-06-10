@@ -18,9 +18,9 @@ css_fundo_azul_marinho = """
 h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
-/* Mantém o texto dentro das caixas de input e selectboxes legível (escuro) */
-input, select {
-    color: #202122 !important;
+/* Altera as letras digitadas dentro das caixas de filtro para branco */
+input, select, div[data-baseweb="select"] * {
+    color: #ffffff !important;
 }
 </style>
 """
