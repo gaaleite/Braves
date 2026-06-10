@@ -198,27 +198,86 @@ if not df_jogos.empty:
                 Qtd_Jogos=("ID_JOGO", "count"),
                 Media_PP=("PP", "mean")
             )
+            .sort_values("Periodo")
             .reset_index()
         )
 
         fig = go.Figure()
 
+        # Configuração da barra no padrão exato Wikipédia / IBGE
         fig.add_trace(
             go.Bar(
                 name="Volume de Jogos",
                 x=df_agrupado["Periodo"],
                 y=df_agrupado["Qtd_Jogos"],
                 text=df_agrupado["Qtd_Jogos"],
-                textposition="auto"
+                textposition="outside",
+                marker=dict(
+                    color="#b0c4de",          # Azul-aço suave padrão Wikipédia
+                    line=dict(
+                        color="#778899",      # Borda cinza escuro das barras
+                        width=1
+                    )
+                ),
+                textfont=dict(
+                    family="sans-serif",
+                    size=12,
+                    color="#202122"           # Cor do texto padrão Wikipédia
+                )
             )
         )
 
-        fig.add_trace(
-            go.Scatter(
-                name="Média PP",
-                x=df_agrupado["Periodo"],
-                y=df_agrupado["Media_PP"],
-                mode="lines+markers"
+        # Customização do Layout para simular o container da Wikipédia
+        fig.update_layout(
+            title=dict(
+                text="Evolução do Volume de Partidas por Período",
+                x=0.5,
+                xanchor="center",
+                font=dict(
+                    family="sans-serif",
+                    size=14,
+                    color="#202122",
+                    weight="bold"
+                )
+            ),
+            backgroundcolor="#f8f9fa",        # Fundo cinza claro clássico
+            paper_bgcolor="#f8f9fa",          # Fundo externo do gráfico
+            plot_bgcolor="#f8f9fa",           # Fundo interno do gráfico
+            margin=dict(l=40, r=40, t=60, b=40),
+            showlegend=False,
+            # Simulação da caixa/borda externa do infobox da Wikipédia
+            shapes=[
+                dict(
+                    type="rect",
+                    xref="paper", yref="paper",
+                    x0=0, y0=0, x1=1, y1=1,
+                    line=dict(color="#a2a9b1", width=1)
+                )
+            ]
+        )
+
+        # Configuração cirúrgica dos eixos
+        fig.update_xaxes(
+            showgrid=False,
+            linecolor="#54595d",              # Linha preta/escura na base
+            linewidth=2,
+            tickfont=dict(
+                family="sans-serif",
+                size=12,
+                color="#202122",
+                weight="bold"
+            )
+        )
+
+        fig.update_yaxes(
+            showgrid=True,
+            gridcolor="#e0e0e0",              # Linhas de grade horizontais bem discretas
+            linecolor="#a2a9b1",
+            linewidth=1,
+            tickfont=dict(
+                family="sans-serif",
+                size=11,
+                color="#202122"
             )
         )
 
