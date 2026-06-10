@@ -88,8 +88,9 @@ else:
     busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
     busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
     
-    # 🚨 Alterado: O terceiro filtro agora busca por Time (Categoria) de forma textual livre
-    busca_time_categoria = f3.text_input("🛡️ Time (Categoria)", placeholder="Ex: Adulto, Sub 14, Sub 17").strip()
+    # Dropdown automático para selecionar a categoria (Adulto, Sub 14, Sub 17, etc.)
+    opcoes_time = ["Todos"] + sorted(list(df_jogos["FAIXA_ETARIA"].unique()))
+    busca_time_categoria = f3.selectbox("🛡️ Time (Categoria)", opcoes_time)
 
     f4, f5, f6 = st.columns(3)
     busca_cidade = f4.text_input("📍 Nossa Cidade", placeholder="Ex: São Paulo").strip()
@@ -102,11 +103,8 @@ else:
         df_filtrado = df_filtrado[df_filtrado["DATA"].str.contains(busca_data, na=False)]
     if busca_ano:
         df_filtrado = df_filtrado[df_filtrado["ANO"].str.contains(busca_ano, na=False)]
-    
-    # 🚨 Alterado: Filtra os dados com base no texto inserido no campo de Time (Categoria)
-    if busca_time_categoria:
-        df_filtrado = df_filtrado[df_filtrado["FAIXA_ETARIA"].str.upper().str.contains(busca_time_categoria.upper(), na=False)]
-        
+    if busca_time_categoria != "Todos":
+        df_filtrado = df_filtrado[df_filtrado["FAIXA_ETARIA"] == busca_time_categoria]
     if busca_cidade:
         df_filtrado = df_filtrado[df_filtrado["CIDADE"].str.upper().str.contains(busca_cidade.upper(), na=False)]
     if busca_adversario:
@@ -142,6 +140,16 @@ else:
             df_grafico["DATA"]
         )
 
+        # Lógica para definir a cor de cada barra individualmente com base no placar
+        cores_barras = []
+        for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
+            if pp > pc:
+                cores_barras.append("#2ece7d")  # Verde suave para Vitória
+            elif pp < pc:
+                cores_barras.append("#e74c3c")  # Vermelho suave para Derrota
+            else:
+                cores_barras.append("#f1c40f")  # Amarelo suave para Empate
+
         try:
             fig = go.Figure()
             valores_y = [1] * len(df_grafico)
@@ -153,7 +161,10 @@ else:
                     y=valores_y,
                     text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                     textposition="outside",
-                    marker=dict(color="#b0c4de", line=dict(color="#778899", width=1)),
+                    marker=dict(
+                        color=cores_barras,  # Aplica a lista dinâmica de cores desenvolvida acima
+                        line=dict(color="#778899", width=1)
+                    ),
                     textfont=dict(family="sans-serif", size=10, color="#202122")
                 )
             )
