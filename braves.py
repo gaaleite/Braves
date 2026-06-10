@@ -4,6 +4,10 @@ import plotly.graph_objects as go
 import urllib.request
 import io
 
+# Configuração da página do Streamlit
+st.set_page_config(layout="wide", page_title="Braves Analytics")
+st.title("🏈 Braves Academy - Painel de Controle")
+
 # Função técnica para converter a imagem local em formato aceito pelo CSS do Streamlit
 def carregar_imagem_fundo(caminho_imagem):
     try:
@@ -35,9 +39,6 @@ if img_base64:
     """
     st.markdown(css_fundo, unsafe_allow_html=True)
 
-# Configuração da página do Streamlit
-st.set_page_config(layout="wide", page_title="Braves Analytics")
-st.title("🏈 Braves Academy - Painel de Controle")
 
 @st.cache_data(ttl=5)
 def carregar_dados():
