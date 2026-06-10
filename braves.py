@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(layout="wide", page_title="Braves Analytics")
-st.title("🏈 Braves Academy - Gráfico de Jogos")
+st.title("🏈 Braves Academy - Painel de Controle")
 
 # LINK OFICIAL DA SUA PLANILHA
 URL_NORMAL = "https://google.com"
@@ -55,72 +55,103 @@ def carregar_dados_posicionais(url):
 df_jogos = carregar_dados_posicionais(URL_NORMAL)
 
 if not df_jogos.empty:
-    st.write("### 🔍 Filtros de Pesquisa")
-    st.caption("Deixe os campos em branco para ver todos os dados da linha do tempo.")
     
-    # --- ORGANIZAÇÃO DOS FILTROS (SEM A PALAVRA 'FILTRAR') ---
-    f1, f2 = st.columns(2)
-    busca_data = f1.text_input("🗓 Data", placeholder="Ex: 12/05", key="f_data").strip()
-    busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2025", key="f_ano").strip()
+    # --- CRIAÇÃO DAS ABAS NAVEGÁVEIS ---
+    aba_graficos, aba_planilha = st.tabs(["📊 Gráfico de Jogos", "📋 Tabela Google Sheets"])
     
-    f3, f4, f5 = st.columns(3)
-    busca_time = f3.text_input("🛡️ Categoria / Time", placeholder="Ex: Sub 14", key="f_time").strip()
-    busca_cidade = f4.text_input("📍 Cidade", placeholder="Ex: São Paulo", key="f_cidade").strip()
-    busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Fox", key="f_adv").strip()
-    
-    # NOVO NOME SOLICITADO
-    f6_col, = st.columns(1)
-    busca_vd = f6_col.text_input("🏆 Resultados (V / D / E)", placeholder="Ex: V", key="f_vd").strip()
-    
-    # --- PROCESSAMENTO DOS FILTROS EM TEMPO REAL ---
-    df_filtrado = df_jogos.copy()
-    
-    if busca_data:
-        df_filtrado = df_filtrado[df_filtrado["DATA"].str.upper().str.contains(busca_data.upper(), na=False)]
-    if busca_ano:
-        df_filtrado = df_filtrado[df_filtrado["ANO"].str.upper().str.contains(busca_ano.upper(), na=False)]
-    if busca_time:
-        df_filtrado = df_filtrado[df_filtrado["TIME"].str.upper().str.contains(busca_time.upper(), na=False)]
-    if busca_cidade:
-        df_filtrado = df_filtrado[df_filtrado["CIDADE"].str.upper().str.contains(busca_cidade.upper(), na=False)]
-    if busca_adversario:
-        df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na=False)]
-    if busca_vd:
-        df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
+    # ==========================================
+    # CONTEÚDO DA ABA 1: GRÁFICOS (E FILTROS)
+    # ==========================================
+    with aba_graficos:
+        st.write("### 🔍 Filtros de Pesquisa")
+        st.caption("Deixe os campos em branco para ver todos os dados da linha do tempo.")
         
-    st.markdown("---")
-    
-    # --- RENDERIZAÇÃO DO GRÁFICO DINÂMICO ---
-    if not df_filtrado.empty:
-        df_filtrado = df_filtrado.reset_index(drop=True)
+        # Organização dos Filtros
+        f1, f2 = st.columns(2)
+        busca_data = f1.text_input("🗓 Data", placeholder="Ex: 12/05", key="f_data").strip()
+        busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2025", key="f_ano").strip()
         
-        st.write("### 📈 Linha de Tendência e Pontuação")
+        f3, f4, f5 = st.columns(3)
+        busca_time = f3.text_input("🛡️ Categoria / Time", placeholder="Ex: Sub 14", key="f_time").strip()
+        busca_cidade = f4.text_input("📍 Cidade", placeholder="Ex: São Paulo", key="f_cidade").strip()
+        busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Fox", key="f_adv").strip()
         
-        # Reconstrói a legenda do Eixo X usando os textos limpos da planilha
-        df_filtrado["Partida"] = (
-            "J" + df_filtrado["JOGO"] + " - " + 
-            df_filtrado["TIME"] + " vs " + 
-            df_filtrado["ADVERSARIO"]
+        f6_col, = st.columns(1)
+        busca_vd = f6_col.text_input("🏆 Resultados (V / D / E)", placeholder="Ex: V", key="f_vd").strip()
+        
+        # Processamento dos Filtros
+        df_filtrado = df_jogos.copy()
+        
+        if busca_data:
+            df_filtrado = df_filtrado[df_filtrado["DATA"].str.upper().str.contains(busca_data.upper(), na=False)]
+        if busca_ano:
+            df_filtrado = df_filtrado[df_filtrado["ANO"].str.upper().str.contains(busca_ano.upper(), na=False)]
+        if busca_time:
+            df_filtrado = df_filtrado[df_filtrado["TIME"].str.upper().str.contains(busca_time.upper(), na=False)]
+        if busca_cidade:
+            df_filtrado = df_filtrado[df_filtrado["CIDADE"].str.upper().str.contains(busca_cidade.upper(), na=False)]
+        if busca_adversario:
+            df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na=False)]
+        if busca_vd:
+            df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
+            
+        st.markdown("---")
+        
+        if not df_filtrado.empty:
+            df_filtrado = df_filtrado.reset_index(drop=True)
+            
+            st.write("### 📈 Linha de Tendência e Pontuação")
+            
+            df_filtrado["Partida"] = (
+                "J" + df_filtrado["JOGO"] + " - " + 
+                df_filtrado["TIME"] + " vs " + 
+                df_filtrado["ADVERSARIO"]
+            )
+            
+            fig = px.line(
+                df_filtrado,
+                x="Partida",
+                y=["PP", "PC"],
+                title="Evolução de Pontos Feitos (PP) vs Pontos Sofridos (PC)",
+                color_discrete_map={"PP": "#2ecc71", "PC": "#e74c3c"},
+                markers=True,
+                labels={"value": "Pontuação", "Partida": "Histórico de Jogos", "variable": "Indicador"}
+            )
+            
+            newnames = {'PP': 'Pontos Pró (PP)', 'PC': 'Pontos Contra (PC)'}
+            fig.for_each_trace(lambda t: t.update(name = newnames[t.name]))
+            
+            fig.update_layout(xaxis_tickangle=-45)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Nenhum dado corresponde aos filtros aplicados nas caixas de pesquisa.")
+
+    # ==========================================
+    # CONTEÚDO DA ABA 2: RÉPLICA DO GOOGLE SHEETS
+    # ==========================================
+    with aba_planilha:
+        st.write("### 📋 Dados consolidados da Planilha")
+        st.caption("Abaixo está a base de dados tratada e sincronizada diretamente com o Google Sheets.")
+        
+        # Renderiza os dados brutos de forma rica e rolável
+        st.dataframe(
+            df_jogos, 
+            use_container_width=True, 
+            height=500,
+            column_config={
+                "PP": st.column_config.NumberColumn("Pontos Pró (PP)", format="%d"),
+                "PC": st.column_config.NumberColumn("Pontos Contra (PC)", format="%d"),
+                "VD": st.column_config.TextColumn("Resultado (V/D/E)")
+            }
         )
         
-        # Gráfico de linha puro
-        fig = px.line(
-            df_filtrado,
-            x="Partida",
-            y=["PP", "PC"],
-            title="Evolução de Pontos Feitos (PP) vs Pontos Sofridos (PC)",
-            color_discrete_map={"PP": "#2ecc71", "PC": "#e74c3c"},
-            markers=True,
-            labels={"value": "Pontuação", "Partida": "Histórico de Jogos", "variable": "Indicador"}
+        # Botão prático para baixar os dados locais em formato CSV
+        csv_dados = df_jogos.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Baixar Dados como CSV",
+            data=csv_dados,
+            file_name="braves_academy_sheets.csv",
+            mime="text/csv",
         )
-        
-        # Altera os nomes exibidos na legenda lateral
-        newnames = {'PP': 'Pontos Pró (PP)', 'PC': 'Pontos Contra (PC)'}
-        fig.for_each_trace(lambda t: t.update(name = newnames[t.name]))
-        
-        fig.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Nenhum dado corresponde aos filtros aplicados nas caixas de pesquisa.")
 else:
     st.warning("Não foi possível carregar os dados. Verifique se as colunas da planilha seguem a ordem correta.")
