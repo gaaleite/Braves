@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import urllib.request
-import json
+import io
 
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
@@ -11,75 +11,70 @@ st.title("🏈 Braves Academy - Painel de Controle")
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
-        # ID da sua planilha extraído do seu link original
-        spreadsheet_id = "1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo"
-        # URL da API pública de tabelas do Google para ler dados limpos estruturados
-        url_json = f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
+        # URL forçando a exportação direta em CSV puro (rápido e sem depender de HTML/lxml)
+        url_csv = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
-        # Requisição segura dos dados brutos em formato JSON
-        req = urllib.request.Request(url_json, headers={'User-Agent': 'Mozilla/5.0'})
+        # Requisição nativa para baixar os dados
+        req = urllib.request.Request(url_csv, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
-            conteudo_bruto = response.read().decode('utf-8')
+            dados_brutos = response.read()
             
-        # Limpa o invólucro padrão da resposta do Google para isolar o JSON puro
-        json_limpo = conteudo_bruto.split("google.visualization.Query.setResponse(")[1].rsplit(");", 1)[0]
-        dados_dict = json.loads(json_limpo)
+        # Carrega o CSV tratando a primeira linha válida como cabeçalho de nomes
+        df = pd.read_csv(io.BytesIO(dados_brutos), on_bad_lines="skip")
         
-        # Estrutura as linhas e colunas retornadas pela API do Sheets
-        linhas = dados_dict.get('table', {}).get('rows', [])
-        
-        lista_final = []
-        for linha in linhas:
-            valores_celula = [
-                str(celula.get('v', '')).strip() if celula else '' 
-                for celula in linha.get('c', [])
-            ]
-            lista_final.append(valores_celula)
-            
-        # Transforma os dados lidos em um DataFrame genérico
-        df_bruto = pd.DataFrame(lista_final)
-        
-        if df_bruto.empty:
+        if df.empty:
             return pd.DataFrame()
-            
-        qtd_colunas = len(df_bruto.columns)
+
+        # Limpa os nomes das colunas (remove espaços em branco e deixa tudo em maiúsculo)
+        df.columns = df.columns.astype(str).str.strip().str.upper()
+        
         df_limpo = pd.DataFrame()
 
-        # Alinhamento fixo baseado nas posições reais da sua tabela do futebol americano
-        if qtd_colunas >= 1:
-            df_limpo["ID_JOGO"] = df_bruto.iloc[:, 0].astype(str).str.strip()
-        if qtd_colunas >= 2:
-            df_limpo["DATA"] = df_bruto.iloc[:, 1].astype(str).str.strip()
-        if qtd_colunas >= 3:
-            df_limpo["ANO"] = df_bruto.iloc[:, 2].astype(str).str.strip()
-        if qtd_colunas >= 4:
-            df_limpo["TORNEIO"] = df_bruto.iloc[:, 3].astype(str).str.strip()
-        if qtd_colunas >= 5:
-            df_limpo["CATEGORIA"] = df_bruto.iloc[:, 4].astype(str).str.strip()
-        if qtd_colunas >= 6:
-            df_limpo["LOCAL"] = df_bruto.iloc[:, 5].astype(str).str.strip()
-        if qtd_colunas >= 7:
-            df_limpo["CIDADE"] = df_bruto.iloc[:, 6].astype(str).str.strip()
-        if qtd_colunas >= 8:
-            df_limpo["ESTADO"] = df_bruto.iloc[:, 7].astype(str).str.strip()
-        if qtd_colunas >= 9:
-            df_limpo["VD"] = df_bruto.iloc[:, 8].astype(str).str.upper().str.strip()
+        # Identificação e mapeamento dinâmico por nome de coluna (evita erros de índice fora de alcance)
+        # ID do Jogo (Geralmente a primeira coluna da tabela)
+        df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
         
-        # Mapeamento seguro para evitar o erro anterior de chave ausente ('PP_RAW')
-        pp_texto = df_bruto.iloc[:, 10].astype(str).str.strip() if qtd_colunas >= 11 else "0"
-        pc_texto = df_bruto.iloc[:, 11].astype(str).str.strip() if qtd_colunas >= 12 else "0"
+        # Captura segura mapeando termos comuns ou variações de digitação na planilha
+        colunas = df.columns
         
-        if qtd_colunas >= 13:
-            df_limpo["ADVERSARIO"] = df_bruto.iloc[:, 12].astype(str).str.strip()
+        df_limpo["DATA"] = df["DATA"].astype(str).str.strip() if "DATA" in colunas else ""
+        df_limpo["ANO"] = df["ANO"].astype(str).str.strip() if "ANO" in colunas else ""
+        df_limpo["TORNEIO"] = df["TORNEIO"].astype(str).str.strip() if "TORNEIO" in colunas else ""
+        df_limpo["CATEGORIA"] = df["CATEGORIA"].astype(str).str.strip() if "CATEGORIA" in colunas else ""
+        df_limpo["LOCAL"] = df["LOCAL"].astype(str).str.strip() if "LOCAL" in colunas else ""
+        df_limpo["CIDADE"] = df["CIDADE"].astype(str).str.strip() if "CIDADE" in colunas else ""
+        df_limpo["ESTADO"] = df["ESTADO"].astype(str).str.strip() if "ESTADO" in colunas else ""
+        
+        # Mapeamento do resultado do jogo (V / D / E)
+        if "V / D / E" in colunas:
+            df_limpo["VD"] = df["V / D / E"].astype(str).str.upper().str.strip()
+        elif "VD" in colunas:
+            df_limpo["VD"] = df["VD"].astype(str).str.upper().str.strip()
+        else:
+            df_limpo["VD"] = ""
+
+        # Mapeamento dinâmico para Pontos Pró (PP)
+        if "PP" in colunas:
+            df_limpo["PP"] = pd.to_numeric(df["PP"], errors="coerce").fillna(0).astype(int)
+        else:
+            df_limpo["PP"] = 0
+
+        # Mapeamento dinâmico para Pontos Contra (PC)
+        if "PC" in colunas:
+            df_limpo["PC"] = pd.to_numeric(df["PC"], errors="coerce").fillna(0).astype(int)
+        else:
+            df_limpo["PC"] = 0
+
+        # Mapeamento dinâmico para o Adversário
+        if "ADVERSÁRIO" in colunas:
+            df_limpo["ADVERSARIO"] = df["ADVERSÁRIO"].astype(str).str.strip()
+        elif "ADVERSARIO" in colunas:
+            df_limpo["ADVERSARIO"] = df["ADVERSARIO"].astype(str).str.strip()
         else:
             df_limpo["ADVERSARIO"] = "Desconhecido"
 
-        # Validação de linhas: remove cabeçalhos de texto mantendo apenas IDs numéricos de jogos válidos
+        # Remove linhas de cabeçalho extras ou vazias filtrando apenas registros onde o ID é numérico
         df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
-
-        # Conversão matemática final do placar de pontuação de forma isolada
-        df_limpo["PP"] = pd.to_numeric(pp_texto, errors="coerce").fillna(0).astype(int)
-        df_limpo["PC"] = pd.to_numeric(pc_texto, errors="coerce").fillna(0).astype(int)
 
         return df_limpo.reset_index(drop=True)
 
@@ -87,15 +82,15 @@ def carregar_dados():
         st.error(f"Erro ao processar dados da tabela: {e}")
         return pd.DataFrame()
 
-# Chamada principal de carga dos dados
+# Executa o carregamento dos dados
 df_jogos = carregar_dados()
 
 if df_jogos.empty:
-    st.error("⚠️ Não foi possível ler os dados da planilha. Verifique se o acesso público está ativo no Drive.")
+    st.error("⚠️ Não foi possível ler os dados da planilha. Verifique se ela continua publicada na web corretamente no Google Sheets.")
 else:
     st.write("### 🔍 Filtros de Pesquisa")
 
-    # Alinhamento das caixas de input
+    # Layout de colunas para os filtros de texto
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
     busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
@@ -106,7 +101,7 @@ else:
     busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Locomotives").strip()
     busca_vd = f6.text_input("🏆 Resultado (V / D / E)", placeholder="Ex: V").strip()
 
-    # Filtros em tempo de execução
+    # Aplicação dos filtros no DataFrame secundário
     df_filtrado = df_jogos.copy()
 
     if busca_data:
@@ -141,7 +136,7 @@ else:
         st.markdown("---")
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
-        # Preparação para o plot do gráfico de blocos
+        # Configuração do gráfico em ordem cronológica decrescente
         df_grafico = df_filtrado.copy()
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
@@ -153,6 +148,8 @@ else:
 
         try:
             fig = go.Figure()
+            
+            # Altura das barras padronizada por tamanho do lote de dados
             valores_y = [1] * len(df_grafico)
             
             fig.add_trace(
