@@ -93,9 +93,9 @@ else:
     busca_time_categoria = f3.selectbox("🛡️ Time (Categoria)", opcoes_time)
 
     f4, f5, f6 = st.columns(3)
-    busca_cidade = f4.text_input("📍 Nossa Cidade", placeholder="Ex: São Paulo").strip()
-    busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Locomotives").strip()
-    busca_vd = f6.text_input("🏆 Resultado (V / D)", placeholder="Ex: V").strip()
+    busca_cidade = f4.text_input("📍 Cidade", placeholder="Ex: São Paulo").strip()
+    busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: 4Fun").strip()
+    busca_vd = f6.text_input("🏆 Resultado (V / D / E)", placeholder="Ex: V").strip()
 
     df_filtrado = df_jogos.copy()
 
