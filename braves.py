@@ -15,7 +15,7 @@ def carregar_dados():
         url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
         # Converte o link pubhtml para o formato de exportação CSV limpo aceito pelo Pandas
-        url_csv = url_original.replace("/pubhtml", "/pub").split("?")[0] + "?gid=516798055&single=true&output=csv"
+        url_csv = url_original.replace("/pubhtml", "/pub").split("?") + "?gid=516798055&single=true&output=csv"
         
         # Faz a requisição simulando um navegador para evitar bloqueios de segurança do Google
         req = urllib.request.Request(url_csv, headers={'User-Agent': 'Mozilla/5.0'})
@@ -103,7 +103,7 @@ else:
     if busca_cidade:
         df_filtrado = df_filtrado[df_filtrado["CIDADE"].str.upper().str.contains(busca_cidade.upper(), na=False)]
     if busca_adversario:
-        df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na=False)]
+        df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na-False)]
     if busca_vd:
         df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
 
@@ -160,7 +160,6 @@ else:
                     xanchor="center",
                     font=dict(family="sans-serif", size=14, color="#202122", weight="bold")
                 ),
-                backgroundcolor="#f8f9fa",
                 paper_bgcolor="#f8f9fa",          
                 plot_bgcolor="#f8f9fa",           
                 margin=dict(l=40, r=40, t=60, b=80),
