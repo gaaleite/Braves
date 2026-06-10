@@ -15,7 +15,7 @@ URL_LEITURA_CSV = "https://docs.google.com/spreadsheets/d/1ZOetHxxdpHmPe2aCfPvli
 def carregar_dados_posicionais(url):
     try:
         # Carrega a planilha sem assumir nenhuma linha fixa como cabeçalho de texto
-        df = pd.read_csv(url, header=None, on_bad_lines='skip')
+        df = pd.read_csv("dados.csv", header=None, on_bad_lines='skip')
         if not df.empty:
             qtd_colunas = len(df.columns)
             df_limpo = pd.DataFrame()
