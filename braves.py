@@ -168,7 +168,7 @@ else:
             else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
-        try:
+                try:
             fig = go.Figure()
             valores_y = [1] * len(df_grafico)
             
@@ -186,12 +186,16 @@ else:
                 )
             )
             
-            # Exibe o gráfico original exatamente como estava antes
+            # Força as legendas de baixo a ficarem totalmente na horizontal (padrão de leitura)
+            fig.update_layout(
+                xaxis=dict(tickangle=0)
+            )
+            
+            # Exibe o gráfico adaptado
             st.plotly_chart(fig)
 
         except Exception as e:
             st.error(f"Erro ao gerar o gráfico dinâmico: {e}")
-
 
             titulo_dinamico = f"Evolução de Atividade — Total de {len(df_grafico)} Partidas Realizadas"
             
