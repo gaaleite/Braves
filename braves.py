@@ -11,14 +11,15 @@ st.title("🏈 Braves Academy - Painel de Controle")
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
-        # 🚨 SUBSTiTUA O LINK ABAIXO PELO NOVO LINK CSV QUE VOCÊ COPIOU NA PUBLICAÇÃO DA NOVA PLANILHA
+        # Link oficial fornecido por você (convertido internamente para a saída limpa em CSV)
         url_csv = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
+        # Faz a requisição simulando o navegador para evitar bloqueios de segurança
         req = urllib.request.Request(url_csv, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
             dados_brutos = response.read()
             
-        # Carrega o arquivo sem assumir nomes de colunas fixos na primeira linha
+        # Lê o arquivo tratando o cabeçalho pelas posições das colunas (header=None)
         df = pd.read_csv(io.BytesIO(dados_brutos), header=None, on_bad_lines="skip")
         
         if df.empty:
@@ -27,7 +28,7 @@ def carregar_dados():
         qtd_colunas = len(df.columns)
         df_limpo = pd.DataFrame()
 
-        # Mapeamento físico sequencial das colunas (independe de cabeçalho texto)
+        # Alinhamento e extração por posição sequencial (independe do texto do cabeçalho)
         if qtd_colunas >= 1:
             df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
         if qtd_colunas >= 2:
@@ -47,36 +48,37 @@ def carregar_dados():
         if qtd_colunas >= 9:
             df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
         
-        # Armazena temporariamente os placares brutos para conversão limpa
-        pp_texto = df.iloc[:, 10].astype(str).str.strip() if qtd_colunas >= 11 else "0"
-        pc_texto = df.iloc[:, 11].astype(str).str.strip() if qtd_colunas >= 12 else "0"
+        # Captura os dados textuais de pontuação antes de transformá-los em números inteiros
+        pp_raw = df.iloc[:, 10].astype(str).str.strip() if qtd_colunas >= 11 else "0"
+        pc_raw = df.iloc[:, 11].astype(str).str.strip() if qtd_colunas >= 12 else "0"
         
         if qtd_colunas >= 13:
             df_limpo["ADVERSARIO"] = df.iloc[:, 12].astype(str).str.strip()
         else:
             df_limpo["ADVERSARIO"] = "Desconhecido"
 
-        # Mantém apenas linhas que tenham o ID do jogo numérico, limpando títulos remanescentes
+        # Remove as linhas de cabeçalho mantendo apenas IDs numéricos de partidas reais
         df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
 
-        # Converte placares tratando falhas de texto de forma segura
-        df_limpo["PP"] = pd.to_numeric(pp_texto, errors="coerce").fillna(0).astype(int)
-        df_limpo["PC"] = pd.to_numeric(pc_texto, errors="coerce").fillna(0).astype(int)
+        # Correção do erro: Tratamento de nulos e conversão numérica segura feita em série Pandas
+        df_limpo["PP"] = pd.to_numeric(pp_raw, errors="coerce").fillna(0).astype(int)
+        df_limpo["PC"] = pd.to_numeric(pc_raw, errors="coerce").fillna(0).astype(int)
 
         return df_limpo.reset_index(drop=True)
 
     except Exception as e:
-        st.error(f"Erro interno de processamento: {e}")
+        st.error(f"Erro ao processar dados da tabela: {e}")
         return pd.DataFrame()
 
-# Execução do carregamento
+# Chamada da função de carregamento
 df_jogos = carregar_dados()
 
 if df_jogos.empty:
-    st.error("⚠️ O banco de dados retornou vazio. Garanta que substituiu o link da linha 14 pelo novo link gerado em 'Publicar na Web' da nova planilha.")
+    st.error("⚠️ Não foi possível carregar os dados. Certifique-se de que a planilha possui linhas com IDs numéricos na primeira coluna.")
 else:
     st.write("### 🔍 Filtros de Pesquisa")
 
+    # Layout estruturado dos filtros em três colunas
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
     busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
@@ -87,6 +89,7 @@ else:
     busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Locomotives").strip()
     busca_vd = f6.text_input("🏆 Resultado (V / D / E)", placeholder="Ex: V").strip()
 
+    # Filtros aplicados em cascata
     df_filtrado = df_jogos.copy()
 
     if busca_data:
@@ -121,6 +124,7 @@ else:
         st.markdown("---")
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
+        # Ordenação cronológica para o gráfico de barras
         df_grafico = df_filtrado.copy()
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
