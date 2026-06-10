@@ -8,14 +8,32 @@ import io
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Painel de Controle")
 
-# Injeta CSS para aplicar o fundo azul-marinho profundo e ajustar os textos para branco
-css_fundo_azul_marinho = """
+# Injeta CSS para aplicar o fundo azul-marinho, textos brancos e o título vermelho escuro com contorno branco
+css_painel = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #0a192f; /* Azul-marinho profundo e profissional */
+    background-color: #0a192f; /* Azul-marinho profundo */
 }
-/* Força títulos e subtextos principais a ficarem brancos */
-h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
+/* Estilização exclusiva do título principal */
+.titulo-warriors {
+    color: #8b0000 !important; /* Vermelho escuro */
+    font-size: 2.8rem;
+    font-weight: bold;
+    font-family: 'sans-serif';
+    /* Cria o efeito de contorno/borda branca ao redor do texto */
+    text-shadow: 
+        -2px -2px 0 #ffffff,  
+         2px -2px 0 #ffffff,
+        -2px  2px 0 #ffffff,
+         2px  2px 0 #ffffff,
+        -2px  0px 0 #ffffff,
+         2px  0px 0 #ffffff,
+         0px -2px 0 #ffffff,
+         0px  2px 0 #ffffff;
+    margin-bottom: 20px;
+}
+/* Força subtextos principais a ficarem brancos */
+h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
 /* Mantém o texto dentro das caixas de input e selectboxes legível (escuro) */
@@ -24,7 +42,7 @@ input, select {
 }
 </style>
 """
-st.markdown(css_fundo_azul_marinho, unsafe_allow_html=True)
+st.markdown(css_painel, unsafe_allow_html=True)
 
 @st.cache_data(ttl=5)
 def carregar_dados():
