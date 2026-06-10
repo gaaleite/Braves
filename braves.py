@@ -87,7 +87,9 @@ else:
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
     busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
-    busca_categoria = f3.text_input("🛡️ Categoria (Modalidade)", placeholder="Ex: 5x5").strip()
+    
+    # 🚨 Alterado: O terceiro filtro agora busca por Time (Categoria) de forma textual livre
+    busca_time_categoria = f3.text_input("🛡️ Time (Categoria)", placeholder="Ex: Adulto, Sub 14, Sub 17").strip()
 
     f4, f5, f6 = st.columns(3)
     busca_cidade = f4.text_input("📍 Nossa Cidade", placeholder="Ex: São Paulo").strip()
@@ -100,8 +102,11 @@ else:
         df_filtrado = df_filtrado[df_filtrado["DATA"].str.contains(busca_data, na=False)]
     if busca_ano:
         df_filtrado = df_filtrado[df_filtrado["ANO"].str.contains(busca_ano, na=False)]
-    if busca_categoria:
-        df_filtrado = df_filtrado[df_filtrado["CATEGORIA"].str.upper().str.contains(busca_categoria.upper(), na=False)]
+    
+    # 🚨 Alterado: Filtra os dados com base no texto inserido no campo de Time (Categoria)
+    if busca_time_categoria:
+        df_filtrado = df_filtrado[df_filtrado["FAIXA_ETARIA"].str.upper().str.contains(busca_time_categoria.upper(), na=False)]
+        
     if busca_cidade:
         df_filtrado = df_filtrado[df_filtrado["CIDADE"].str.upper().str.contains(busca_cidade.upper(), na=False)]
     if busca_adversario:
@@ -176,7 +181,6 @@ else:
                 ]
             )
             
-            # 🚨 Alterado: adicionado tickfont com color="black" para fixar os rótulos inferiores em preto puro
             fig.update_xaxes(
                 title_text="Temporada / Partida", 
                 tickangle=0,
