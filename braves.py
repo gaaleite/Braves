@@ -185,52 +185,54 @@ if not df_jogos.empty:
 
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
-        df_filtrado["Periodo"] = (
-            df_filtrado["DATA"].str.slice(3, 5)
-            + "/"
-            + df_filtrado["ANO"]
+        # 1. Preparação dos dados e ordenação: do jogo mais atual para o mais antigo
+        # Convertemos o ID_JOGO para numérico para garantir a ordenação cronológica decrescente correta
+        df_grafico = df_filtrado.copy()
+        df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
+        df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
+
+        # Criamos o rótulo do nome de cada dado que vai aparecer na parte de baixo do gráfico
+        df_grafico["Rotulo_Jogo"] = (
+            "Jógo " + df_grafico["ID_JOGO"] + "<br>" + 
+            df_grafico["DATA"] + "<br>vs " + df_grafico["ADVERSARIO"]
         )
 
-        df_agrupado = (
-            df_filtrado
-            .groupby("Periodo")
-            .agg(
-                Qtd_Jogos=("ID_JOGO", "count"),
-                Media_PP=("PP", "mean")
-            )
-            .sort_values("Periodo")
-            .reset_index()
-        )
+        # Calcular o total de jogos por ano para exibir no gráfico de forma dinâmica
+        total_por_ano = df_grafico.groupby("ANO")["ID_JOGO"].count().to_dict()
 
         fig = go.Figure()
 
-        # Configuração da barra no padrão exato Wikipédia / IBGE
+        # 2. Plotagem das barras no estilo clássico Wikipédia (IBGE)
+        # Usamos uma lista multi-nível nos eixos (ANO, Rotulo) para criar a separação visual por colunas de anos
         fig.add_trace(
             go.Bar(
-                name="Volume de Jogos",
-                x=df_agrupado["Periodo"],
-                y=df_agrupado["Qtd_Jogos"],
-                text=df_agrupado["Qtd_Jogos"],
+                name="Jogos",
+                x=[df_grafico["ANO"], df_grafico["Rotulo_Jogo"]],
+                y=[1] * len(df_grafico), # Cada jogo individual representa 1 unidade no bloco do censo
+                text=[f"Placar: {pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                 textposition="outside",
                 marker=dict(
-                    color="#b0c4de",          # Azul-aço suave padrão Wikipédia
+                    color="#b0c4de",          # Azul-aço clássico da Wikipédia
                     line=dict(
-                        color="#778899",      # Borda cinza escuro das barras
+                        color="#778899",      # Borda cinza escuro
                         width=1
                     )
                 ),
                 textfont=dict(
                     family="sans-serif",
-                    size=12,
-                    color="#202122"           # Cor do texto padrão Wikipédia
+                    size=10,
+                    color="#202122"
                 )
             )
         )
 
-        # Customização do Layout para simular o container da Wikipédia
+        # 3. Customização do Layout simulando a caixa de evolução populacional da Wikipédia
+        # Título dinâmico que puxa o tamanho total atual do dataframe (ex: 277 jogos)
+        titulo_dinamico = f"Evolução de Atividade — Total de {len(df_grafico)} Partidas Realizadas"
+        
         fig.update_layout(
             title=dict(
-                text="Evolução do Volume de Partidas por Período",
+                text=titulo_dinamico,
                 x=0.5,
                 xanchor="center",
                 font=dict(
@@ -240,12 +242,12 @@ if not df_jogos.empty:
                     weight="bold"
                 )
             ),
-            backgroundcolor="#f8f9fa",        # Fundo cinza claro clássico
-            paper_bgcolor="#f8f9fa",          # Fundo externo do gráfico
-            plot_bgcolor="#f8f9fa",           # Fundo interno do gráfico
-            margin=dict(l=40, r=40, t=60, b=40),
+            backgroundcolor="#f8f9fa",        # Cor de fundo padrão cinza claro das tabelas wiki
+            paper_bgcolor="#f8f9fa",          
+            plot_bgcolor="#f8f9fa",           
+            margin=dict(l=40, r=40, t=60, b=80),
             showlegend=False,
-            # Simulação da caixa/borda externa do infobox da Wikipédia
+            # Gera a borda cinza externa do infobox
             shapes=[
                 dict(
                     type="rect",
@@ -256,30 +258,39 @@ if not df_jogos.empty:
             ]
         )
 
-        # Configuração cirúrgica dos eixos
+        # 4. Ajuste dos Eixos com agrupamento e nomes na parte inferior
         fig.update_xaxes(
-            showgrid=False,
-            linecolor="#54595d",              # Linha preta/escura na base
-            linewidth=2,
-            tickfont=dict(
-                family="sans-serif",
-                size=12,
-                color="#202122",
-                weight="bold"
-            )
-        )
-
-        fig.update_yaxes(
             showgrid=True,
-            gridcolor="#e0e0e0",              # Linhas de grade horizontais bem discretas
-            linecolor="#a2a9b1",
-            linewidth=1,
-            tickfont=dict(
+            gridcolor="#d3d3d3",              # Grade vertical para separar claramente as colunas dos anos
+            linecolor="#54595d",              # Linha escura espessa na base inferior
+            linewidth=2,
+            tickangle=0,
+            font=dict(
                 family="sans-serif",
                 size=11,
                 color="#202122"
             )
         )
+
+        # Como a contagem é por blocos de jogo, escondemos os números do eixo Y para focar nos nomes inferiores
+        fig.update_yaxes(
+            showgrid=False,
+            showticklabels=False,
+            linecolor="#a2a9b1",
+            linewidth=1
+        )
+
+        # 5. Adiciona anotações no topo do gráfico mostrando o total acumulado de cada ano de forma limpa
+        for ano, total in total_por_ano.items():
+            fig.add_annotation(
+                text=f"<b>Ano {ano}<br>Total: {total} jogos</b>",
+                xref="x",
+                yref="paper",
+                x=(ano, df_grafico[df_grafico["ANO"] == ano]["Rotulo_Jogo"].iloc[0]),
+                y=1.05,
+                showarrow=False,
+                font=dict(family="sans-serif", size=11, color="#202122")
+            )
 
         st.plotly_chart(fig, use_container_width=True)
 
