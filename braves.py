@@ -67,7 +67,7 @@ def carregar_dados():
         qtd_colunas = len(df.columns)
         df_limpo = pd.DataFrame()
 
-        # Mapeamento estrito baseado nas colunas reais da imagem enviada
+        # Mapeamento estrito baseado nas colunas reais do Google Sheets
         if qtd_colunas >= 1:
             df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
         if qtd_colunas >= 2:
@@ -178,11 +178,11 @@ else:
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
-                cores_barras.append("#2ece7d")  # Verde suave para Vitória
+                cores_barras.append("#2ece7d")  # Verde para Vitória
             elif pp < pc:
-                cores_barras.append("#e74c3c")  # Vermelho suave para Derrota
+                cores_barras.append("#e74c3c")  # Vermelho para Derrota
             else:
-                cores_barras.append("#f1c40f")  # Amarelo suave para Empate
+                cores_barras.append("#f1c40f")  # Amarelo para Empate
 
         try:
             fig = go.Figure()
@@ -196,10 +196,10 @@ else:
                     text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                     textposition="outside",
                     marker=dict(
-                        color=cores_barras,  # Aplica a lista dinâmica de cores desenvolvida acima
+                        color=cores_barras,
                         line=dict(color="#778899", width=1)
                     ),
-                    textfont=dict(family="sans-serif", size=10, color="#202122")
+                    textfont=dict(family="sans-serif", size=10, color="#202122") # Placar em cinza escuro para o fundo claro
                 )
             )
 
@@ -210,10 +210,10 @@ else:
                     text=titulo_dinamico,
                     x=0.5,
                     xanchor="center",
-                    font=dict(family="sans-serif", size=14, color="#202122", weight="bold")
+                    font=dict(family="sans-serif", size=14, color="#202122", weight="bold") # Título do gráfico escuro
                 ),
-                paper_bgcolor="#f8f9fa",          
-                plot_bgcolor="#f8f9fa",           
+                paper_bgcolor="#f4f4f4",  # 🚨 Alterado: Fundo externo do gráfico em cinza claro
+                plot_bgcolor="#f4f4f4",   # 🚨 Alterado: Fundo interno do gráfico em cinza claro
                 margin=dict(l=40, r=40, t=60, b=80),
                 showlegend=False,
                 shapes=[
@@ -221,7 +221,7 @@ else:
                         type="rect",
                         xref="paper", yref="paper",
                         x0=0, y0=0, x1=1, y1=1,
-                        line=dict(color="#a2a9b1", width=1)
+                        line=dict(color="#a2a9b1", width=1) # Caixa externa cinza clássica
                     )
                 ]
             )
@@ -229,19 +229,7 @@ else:
             fig.update_xaxes(
                 title_text="Temporada / Partida", 
                 tickangle=0,
-                title_font=dict(color="black"),
-                tickfont=dict(family="sans-serif", size=10, color="black")
+                title_font=dict(color="#202122"),
+                tickfont=dict(family="sans-serif", size=10, color="#202122") # Rótulos inferiores em cinza escuro
             )
             fig.update_yaxes(showticklabels=False, showgrid=False)
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-        except Exception as e:
-            st.error(f"Erro ao renderizar o gráfico: {e}")
-        
-        st.write("### 📋 Tabela de Dados Filtrada")
-        colunas_exibicao = ["ID_JOGO", "DATA", "ANO", "TORNEIO", "FAIXA_ETARIA", "CATEGORIA", "CIDADE", "VD", "PP", "PC", "ADVERSARIO"]
-        st.dataframe(df_filtrado[colunas_exibicao], use_container_width=True)
-        
-    else:
-        st.warning("Nenhum registro encontrado para os filtros selecionados.")
