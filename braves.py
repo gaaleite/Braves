@@ -11,7 +11,7 @@ st.set_page_config(layout="wide", page_title="Braves Analytics")
 css_painel = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #0d1b2a; /* Lindo tom de azul-marinho fechado */
+    background-color: #0d1b2a; /* Tom de azul-marinho fechado */
 }
 /* Força subtextos e indicadores padrão a ficarem brancos */
 h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
@@ -25,7 +25,7 @@ input, select {
 """
 st.markdown(css_painel, unsafe_allow_html=True)
 
-# Título customizado com correção estrita de cor (vermelho escuro e contorno branco) usando estilo inline forçado
+# Título customizado com corte 100% nítido usando borda nativa em vez de sombra acumulada
 st.markdown(
     """
     <h1 style="
@@ -33,15 +33,7 @@ st.markdown(
         font-size: 2.8rem; 
         font-weight: bold; 
         font-family: 'sans-serif'; 
-        text-shadow: 
-            -2px -2px 0 #ffffff,  
-             2px -2px 0 #ffffff,
-            -2px  2px 0 #ffffff,
-             2px  2px 0 #ffffff,
-            -2px  0px 0 #ffffff,
-             2px  0px 0 #ffffff,
-             0px -2px 0 #ffffff,
-             0px  2px 0 #ffffff;
+        -webkit-text-stroke: 1.5px #ffffff; /* Borda branca fina e perfeitamente nítida */
         margin-bottom: 20px;
     ">
     🏈 Braves Academy - Painel de Controle
