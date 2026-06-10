@@ -81,7 +81,7 @@ def carregar_dados():
             df_limpo["ADVERSARIO"] = "Desconhecido"
 
         # Remove a linha de títulos (onde a primeira coluna diz "JOGO") mantendo apenas IDs numéricos válidos
-        df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
+        df_limpo = df_limpo[df_limpo["JOGO"].str.isnumeric()]
 
         # Converte placares com segurança apenas para as linhas numéricas válidas filtradas
         df_limpo["PP"] = pd.to_numeric(pp_raw.loc[df_limpo.index], errors="coerce").fillna(0).astype(int)
