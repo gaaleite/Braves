@@ -8,7 +8,7 @@ st.title("🏈 Braves Academy - Painel de Controle")
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
-        df = pd.read_csv("AllGames.csv", header=None, on_bad_lines="skip")
+        df = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true", header=None, on_bad_lines="skip")
 
         if df.empty:
             return pd.DataFrame()
