@@ -3,9 +3,42 @@ import pandas as pd
 import plotly.graph_objects as go
 import urllib.request
 import io
+import base64
 
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
+
+# Função técnica para converter a imagem local em formato aceito pelo CSS do Streamlit
+def carregar_imagem_fundo(caminho_imagem):
+    try:
+        with open(caminho_imagem, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        return encoded_string
+    except:
+        return None
+
+# Carrega a imagem salva na mesma pasta do script
+img_base64 = carregar_imagem_fundo("logo_warriors.jpg")
+
+if img_base64:
+    # Injeta o CSS customizado para fixar a imagem centralizada com opacidade sutil ao fundo
+    css_fundo = f"""
+    <style>
+    [data-testid="stAppViewContainer"] {{
+        background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url("data:image/jpg;base64,{img_base64}");
+        background-size: 550px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-attachment: fixed;
+    }}
+    /* Garante que os blocos de filtros e tabelas fiquem limpos por cima do fundo */
+    [data-testid="stHeader"] {{
+        background: rgba(0,0,0,0);
+    }}
+    </style>
+    """
+    st.markdown(css_fundo, unsafe_allow_html=True)
+
 st.title("🏈 Braves Academy - Painel de Controle")
 
 @st.cache_data(ttl=5)
@@ -93,9 +126,9 @@ else:
     busca_time_categoria = f3.selectbox("🛡️ Time (Categoria)", opcoes_time)
 
     f4, f5, f6 = st.columns(3)
-    busca_cidade = f4.text_input("📍 Cidade", placeholder="Ex: São Paulo").strip()
-    busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: 4Fun").strip()
-    busca_vd = f6.text_input("🏆 Resultado (V / D / E)", placeholder="Ex: V").strip()
+    busca_cidade = f4.text_input("📍 Nossa Cidade", placeholder="Ex: São Paulo").strip()
+    busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Locomotives").strip()
+    busca_vd = f6.text_input("🏆 Resultado (V / D)", placeholder="Ex: V").strip()
 
     df_filtrado = df_jogos.copy()
 
@@ -162,7 +195,7 @@ else:
                     text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                     textposition="outside",
                     marker=dict(
-                        color=cores_barras,  # Aplica a lista dinâmica de cores desenvolvida acima
+                        color=cores_barras,
                         line=dict(color="#778899", width=1)
                     ),
                     textfont=dict(family="sans-serif", size=10, color="#202122")
@@ -180,7 +213,7 @@ else:
                 ),
                 paper_bgcolor="#f8f9fa",          
                 plot_bgcolor="#f8f9fa",           
-                margin=dict(l=40, r=40, t=60, b=80),
+                margin=dict(l=40, r=40, t=60 holiday, b=80),
                 showlegend=False,
                 shapes=[
                     dict(
@@ -200,14 +233,3 @@ else:
             )
             fig.update_yaxes(showticklabels=False, showgrid=False)
             
-            st.plotly_chart(fig, use_container_width=True)
-            
-        except Exception as e:
-            st.error(f"Erro ao renderizar o gráfico: {e}")
-        
-        st.write("### 📋 Tabela de Dados Filtrada")
-        colunas_exibicao = ["ID_JOGO", "DATA", "ANO", "TORNEIO", "FAIXA_ETARIA", "CATEGORIA", "CIDADE", "VD", "PP", "PC", "ADVERSARIO"]
-        st.dataframe(df_filtrado[colunas_exibicao], use_container_width=True)
-        
-    else:
-        st.warning("Nenhum registro encontrado para os filtros selecionados.")
