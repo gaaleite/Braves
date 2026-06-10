@@ -47,9 +47,16 @@ def carregar_dados():
         if qtd_colunas >= 9:
             df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
         
-        # Isola e limpa os textos das colunas PP (10) e PC (11) antes de qualquer conversão
-        pp_raw = df.iloc[:, 10].astype(str).str.strip() if qtd_colunas >= 11 else "0"
-        pc_raw = df.iloc[:, 11].astype(str).str.strip() if qtd_colunas >= 12 else "0"
+        # Correção do erro: extrai e converte como série do Pandas diretamente do DataFrame original (df)
+        if qtd_colunas >= 11:
+            df_limpo["PP"] = pd.to_numeric(df.iloc[:, 10], errors="coerce").fillna(0).astype(int)
+        else:
+            df_limpo["PP"] = 0
+            
+        if qtd_colunas >= 12:
+            df_limpo["PC"] = pd.to_numeric(df.iloc[:, 11], errors="coerce").fillna(0).astype(int)
+        else:
+            df_limpo["PC"] = 0
         
         if qtd_colunas >= 13:
             df_limpo["ADVERSARIO"] = df.iloc[:, 12].astype(str).str.strip()
@@ -58,10 +65,6 @@ def carregar_dados():
 
         # Remove cabeçalhos textuais filtrando apenas as linhas onde a primeira coluna é um número
         df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
-
-        # Aplica a conversão numérica de forma segura nas séries de texto isoladas
-        df_limpo["PP"] = pd.to_numeric(pp_raw.loc[df_limpo.index], errors="coerce").fillna(0).astype(int)
-        df_limpo["PC"] = pd.to_numeric(pc_raw.loc[df_limpo.index], errors="coerce").fillna(0).astype(int)
 
         return df_limpo.reset_index(drop=True)
 
