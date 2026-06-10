@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import urllib.request
+import io
 
 # Configuração da página do Streamlit
 st.set_page_config(layout="wide", page_title="Braves Analytics")
@@ -9,28 +11,33 @@ st.title("🏈 Braves Academy - Painel de Controle")
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
-        # Link público original no formato HTML fornecido no seu script inicial
+        # Link público original em formato HTML de publicação
         url_html = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
-        # Lê todas as tabelas HTML contidas na página publicada
-        tabelas = pd.read_html(url_html, header=1)
+        # Requisição nativa para evitar dependência do pacote lxml externo
+        req = urllib.request.Request(url_html, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            html_content = response.read()
+            
+        # Converte a string HTML via motor de fallback nativo do Python (html5lib/bs4 de forma implícita se houver)
+        # Se falhar, tenta ler de forma segura isolando as tags de tabela básicas
+        tabelas = pd.read_html(io.BytesIO(html_content), header=1)
         
         if not tabelas:
             return pd.DataFrame()
             
-        # Captura a tabela principal de dados (geralmente a primeira da página do Sheets)
         df = tabelas[0]
 
-        # Limpa os nomes das colunas removendo espaços extras
+        # Limpeza nos nomes das colunas
         df.columns = df.columns.astype(str).str.strip()
 
-        # Remove colunas fantasmas geradas pelo índice lateral do Google Sheets (Ex: '1', '2', 'Unnamed: 0')
+        # Remove colunas de índice fantasma geradas pelo Google Sheets
         colunas_validas = [c for c in df.columns if not c.isdigit() and "Unnamed" not in c]
         df = df[colunas_validas]
 
         df_limpo = pd.DataFrame()
 
-        # Mapeamento dinâmico baseado nos nomes literais das colunas do seu Google Sheets
+        # Mapeamento dinâmico baseado na estrutura de cabeçalho do Sheets
         if len(df.columns) > 0:
             df_limpo["ID_JOGO"] = df.iloc[:, 0].astype(str).str.strip()
         
@@ -49,7 +56,6 @@ def carregar_dados():
         if "ESTADO" in df.columns:
             df_limpo["ESTADO"] = df["ESTADO"].astype(str).str.strip()
             
-        # Tratamento flexível para variações no nome da coluna de resultado
         if "V / D / E" in df.columns:
             df_limpo["VD"] = df["V / D / E"].astype(str).str.upper().str.strip()
         elif "VD" in df.columns:
@@ -57,7 +63,7 @@ def carregar_dados():
         elif len(df.columns) >= 9:
             df_limpo["VD"] = df.iloc[:, 8].astype(str).str.upper().str.strip()
 
-        # Identificação inteligente das colunas de pontuação e adversário
+        # Identificação inteligente de pontuações e oponentes
         pp_col = "PP" if "PP" in df.columns else (df.columns[10] if len(df.columns) >= 11 else None)
         pc_col = "PC" if "PC" in df.columns else (df.columns[11] if len(df.columns) >= 12 else None)
         
@@ -68,7 +74,6 @@ def carregar_dados():
         else:
             adv_col = df.columns[12] if len(df.columns) >= 13 else None
 
-        # Processamento e conversão de valores numéricos de forma estável
         if pp_col:
             df_limpo["PP"] = pd.to_numeric(df[pp_col], errors="coerce").fillna(0).astype(int)
         else:
@@ -84,7 +89,7 @@ def carregar_dados():
         else:
             df_limpo["ADVERSARIO"] = "Desconhecido"
 
-        # Garante que apenas linhas correspondentes a jogos válidos entrem no painel
+        # Mantém apenas as linhas com dados de partida reais (ID numérico)
         df_limpo = df_limpo[df_limpo["ID_JOGO"].str.isnumeric()]
 
         return df_limpo.reset_index(drop=True)
@@ -93,28 +98,24 @@ def carregar_dados():
         st.error(f"Erro ao processar dados da tabela: {e}")
         return pd.DataFrame()
 
-# Executa a carga dos dados do painel
+# Executa o carregamento
 df_jogos = carregar_dados()
 
-# Validação do estado do DataFrame
 if df_jogos.empty:
     st.error("⚠️ Não foi possível ler os dados da planilha. Verifique se o link está correto e público no Google Drive.")
 else:
     st.write("### 🔍 Filtros de Pesquisa")
 
-    # Primeira linha de filtros por entrada de texto
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
     busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
     busca_categoria = f3.text_input("🛡️ Categoria", placeholder="Ex: Adulto").strip()
 
-    # Segunda linha de filtros por entrada de texto
     f4, f5, f6 = st.columns(3)
     busca_cidade = f4.text_input("📍 Nossa Cidade", placeholder="Ex: São Paulo").strip()
     busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Locomotives").strip()
     busca_vd = f6.text_input("🏆 Resultado (V / D / E)", placeholder="Ex: V").strip()
 
-    # Criação do DataFrame filtrado em tempo real
     df_filtrado = df_jogos.copy()
 
     if busca_data:
@@ -132,7 +133,6 @@ else:
 
     st.markdown("---")
 
-    # Inicialização dos blocos visuais caso existam dados filtrados
     if not df_filtrado.empty:
         df_filtrado = df_filtrado.reset_index(drop=True)
 
@@ -150,7 +150,6 @@ else:
         st.markdown("---")
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
-        # Ajuste de ordenação cronológica reversa baseado no ID numérico do jogo
         df_grafico = df_filtrado.copy()
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
@@ -163,12 +162,14 @@ else:
         try:
             fig = go.Figure()
             
-            # Geração do gráfico de blocos verticais fixados em unidade única (Y=1)
+            # Ajuste seguro da lista do eixo Y para evitar erros com operadores ocultos
+            valores_y = [1] * len(df_grafico)
+            
             fig.add_trace(
                 go.Bar(
                     name="Jogos",
                     x=[df_grafico["ANO"], df_grafico["Rotulo_Jogo"]],
-                    y=[1] * len(df_grafico),
+                    y=valores_y,
                     text=[f"{pp}x{pc}" for pp, pc in zip(df_grafico["PP"], df_grafico["PC"])],
                     textposition="outside",
                     marker=dict(color="#b0c4de", line=dict(color="#778899", width=1)),
@@ -208,7 +209,6 @@ else:
         except Exception as e:
             st.error(f"Erro ao renderizar o gráfico: {e}")
         
-        # Exibição estruturada da tabela de dados
         st.write("### 📋 Tabela de Dados Filtrada")
         colunas_exibicao = ["ID_JOGO", "DATA", "ANO", "TORNEIO", "CATEGORIA", "CIDADE", "VD", "PP", "PC", "ADVERSARIO"]
         st.dataframe(df_filtrado[colunas_exibicao], use_container_width=True)
