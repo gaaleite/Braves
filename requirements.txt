@@ -1,4 +1,3 @@
 pandas
 plotly
-st-theme
-streamlit-sheets-connection
+requests
