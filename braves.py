@@ -10,7 +10,7 @@ st.title("🏈 Braves Academy - Painel de Controle")
 def carregar_dados():
     try:
         # Link público direto formatado para exportação CSV do Google Sheets
-        url_csv = "https://google.com"
+        url_csv = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
         # Carrega o arquivo tratando linhas corrompidas
         df = pd.read_csv(url_csv, header=None, on_bad_lines="skip")
