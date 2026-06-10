@@ -150,7 +150,7 @@ else:
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
         df_grafico = df_filtrado.copy()
-        df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["ID_JOGO"], errors="coerce")
+        df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=False)
 
         df_grafico["Rotulo_Jogo"] = (
