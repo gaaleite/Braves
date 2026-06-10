@@ -168,7 +168,7 @@ else:
             else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
-                try:
+            try:
             fig = go.Figure()
             valores_y = [1] * len(df_grafico)
             
