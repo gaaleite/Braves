@@ -58,18 +58,19 @@ if not df_jogos.empty:
     st.write("### 🔍 Filtros de Pesquisa")
     st.caption("Deixe os campos em branco para ver todos os dados da linha do tempo.")
     
-    # --- ORGANIZAÇÃO DOS FILTROS ---
+    # --- ORGANIZAÇÃO DOS FILTROS (SEM A PALAVRA 'FILTRAR') ---
     f1, f2 = st.columns(2)
-    busca_data = f1.text_input("🗓 Filtrar por Data", placeholder="Ex: 12/05", key="f_data").strip()
-    busca_ano = f2.text_input("📆 Filtrar por Ano", placeholder="Ex: 2025", key="f_ano").strip()
+    busca_data = f1.text_input("🗓 Data", placeholder="Ex: 12/05", key="f_data").strip()
+    busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2025", key="f_ano").strip()
     
     f3, f4, f5 = st.columns(3)
-    busca_time = f3.text_input("🛡️ Filtrar por Categoria / Time", placeholder="Ex: Sub 14", key="f_time").strip()
-    busca_cidade = f4.text_input("📍 Filtrar por Cidade", placeholder="Ex: São Paulo", key="f_cidade").strip()
-    busca_adversario = f5.text_input("⚔️ Filtrar por Adversário", placeholder="Ex: Fox", key="f_adv").strip()
+    busca_time = f3.text_input("🛡️ Categoria / Time", placeholder="Ex: Sub 14", key="f_time").strip()
+    busca_cidade = f4.text_input("📍 Cidade", placeholder="Ex: São Paulo", key="f_cidade").strip()
+    busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Fox", key="f_adv").strip()
     
-    f6 = st.columns(1)
-    busca_vd = f6.text_input("🏆 Resultado (V = Vitória, D = Derrota, E = Empate)", placeholder="Ex: V", key="f_vd").strip()
+    # NOVO NOME SOLICITADO
+    f6_col, = st.columns(1)
+    busca_vd = f6_col.text_input("🏆 Resultados (V / D / E)", placeholder="Ex: V", key="f_vd").strip()
     
     # --- PROCESSAMENTO DOS FILTROS EM TEMPO REAL ---
     df_filtrado = df_jogos.copy()
