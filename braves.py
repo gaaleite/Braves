@@ -8,6 +8,24 @@ import io
 st.set_page_config(layout="wide", page_title="Braves Analytics")
 st.title("🏈 Braves Academy - Painel de Controle")
 
+# Injeta CSS para aplicar o fundo azul-royal e ajustar os textos para branco
+css_fundo_azul = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-color: #0b3c95; /* Azul-royal oficial dos Warriors */
+}
+/* Força títulos e subtextos principais a ficarem brancos */
+h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
+    color: #ffffff !important;
+}
+/* Mantém o texto dentro das caixas de input legível (escuro) */
+input, select {
+    color: #202122 !important;
+}
+</style>
+"""
+st.markdown(css_fundo_azul, unsafe_allow_html=True)
+
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
