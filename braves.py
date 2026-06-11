@@ -103,8 +103,8 @@ else:
 
     # Filtros estruturados em colunas paralelas
     f1, f2, f3 = st.columns(3)
-    busca_data = f1.text_input("🗓 Data", placeholder="Ex: 07/06").strip()
-    busca_ano = f2.text_input("📆 Ano", placeholder="Ex: 2026").strip()
+    busca_data = f1.text_input("🗓️ Data", placeholder="Ex: 07/06").strip()
+    busca_ano = f2.text_input("📅 Ano", placeholder="Ex: 2026").strip()
     
     # Dropdown automático para selecionar a categoria (Adulto, Sub 14, Sub 17, etc.)
     opcoes_time = ["Todos"] + sorted(list(df_jogos["FAIXA_ETARIA"].unique()))
