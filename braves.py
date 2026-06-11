@@ -128,7 +128,7 @@ else:
     if busca_adversario:
         df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na=False)]
     if busca_vd:
-        df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
+        df_filtrado = df_filtrado[df_filtrado["RESULTADOS (V / D / E)"].str.upper().str.contains(busca_vd.upper(), na=False)]
 
         st.markdown("---")
 
