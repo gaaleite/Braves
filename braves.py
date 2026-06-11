@@ -113,7 +113,7 @@ else:
     f4, f5, f6 = st.columns(3)
     busca_cidade = f4.text_input("📍 Nossa Cidade", placeholder="Ex: São Paulo").strip()
     busca_adversario = f5.text_input("⚔️ Adversário", placeholder="Ex: Locomotives").strip()
-    busca_vd = f6.text_input("🏆 Resultado (V / D)", placeholder="Ex: V").strip()
+    busca_vd = f6.text_input("🏆 Resultados (V / D / E)", placeholder="Ex: V").strip()
 
     df_filtrado = df_jogos.copy()
 
@@ -128,7 +128,7 @@ else:
     if busca_adversario:
         df_filtrado = df_filtrado[df_filtrado["ADVERSARIO"].str.upper().str.contains(busca_adversario.upper(), na=False)]
     if busca_vd:
-        df_filtrado = df_filtrado[df_filtrado["RESULTADOS (V / D / E)"].str.upper().str.contains(busca_vd.upper(), na=False)]
+        df_filtrado = df_filtrado[df_filtrado["VD"].str.upper().str.contains(busca_vd.upper(), na=False)]
 
         st.markdown("---")
 
