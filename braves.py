@@ -159,7 +159,27 @@ else:
         df_grafico["Texto_Coluna"] = df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str)
         df_grafico["Texto_Hover"] = "Jogo " + df_grafico["JOGO"] + "<br>Data: " + df_grafico["DATA"] + "<br>Adversário: " + df_grafico["ADVERSARIO"]
 
-        # Define as cores originais das barras por Resultado
+        # --- MAPEAMENTO DE CORES DOS TEXTOS DO EIXO X POR ANO ---
+        cores_anos = {
+            "2016": "#4cc9f0",  # Azul claro
+            "2017": "#ffd166",  # Amarelo
+            "2018": "#ff4d4d",  # Vermelho
+            "2019": "#06d6a0",  # Verde esmeralda
+            "2020": "#e0aaff",  # Roxo claro
+            "2021": "#f77f00",  # Laranja
+            "2022": "#ffc6ff",  # Rosa bebê
+            "2023": "#00b4d8",  # Azul ciano
+            "2024": "#bf5af2",  # Violeta
+            "2025": "#00f5d4",  # Turquesa
+            "2026": "#ff9f1c",  # Laranja escuro
+        }
+
+        # Cria a lista de cores que será aplicada nas letras das identificações
+        lista_cores_letras = []
+        for ano in df_grafico["ANO"]:
+            lista_cores_letras.append(cores_anos.get(ano, "#ffffff"))
+
+        # Define as cores originais das barras por Resultado (Vitória = Verde)
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
@@ -186,7 +206,6 @@ else:
             indice_inicial = max(0, total_jogos_atuais - 15)
             range_atual = [indice_inicial - 0.5, total_jogos_atuais - 0.5]
 
-        # RECONSTRUÇÃO USANDO PLOTLY EXPRESS (Evita erros de sintaxe por completo)
         fig = px.bar(
             df_grafico,
             x="Rotulo_EixoX",
@@ -198,7 +217,7 @@ else:
         fig.update_traces(
             marker_color=cores_barras,
             textposition="auto",
-            hovertemplate="%{customdata[0]}<extra></extra>"
+            hovertemplate="%{customdata}<extra></extra>"
         )
 
         fig.update_layout(
@@ -208,6 +227,7 @@ else:
             xaxis=dict(
                 type="category",
                 range=range_atual,
+                tickfont_color=lista_cores_letras, # COLORE AS IDENTIFICAÇÕES DE CADA ANO
                 rangeslider=dict(visible=True, thickness=0.08)
             ),
             yaxis=dict(title="Pontos")
