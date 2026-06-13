@@ -202,10 +202,17 @@ else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
         try:
+        # Lógica para definir a cor de cada barra individualmente com base no placar
+        cores_barras = []
+        for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
+            if pp > pc:
+                cores_barras.append("#00b4d8") # Azul para Vitória
+            elif pp < pc:
+                cores_barras.append("#ef476f") # Vermelho para Derrota
+            else:
+                cores_barras.append("#ffd166") # Amarelo para Empate
+
         # --- CONFIGURAÇÃO DO GRÁFICO COM ROLAGEM (RANGESLIDER) E BOTÕES ALTERNATIVOS ---
-        
-        # Define quantos jogos aparecem na tela por vez ao abrir (ex: os últimos 15 jogos)
-        # Isso impede que o gráfico esmague as 277 barras na tela do celular
         jogos_visiveis_inicialmente = 15
         total_jogos_atuais = len(df_grafico)
         
@@ -213,15 +220,15 @@ else:
         indice_inicial = max(0, total_jogos_atuais - jogos_visiveis_inicialmente)
         range_inicial = [indice_inicial - 0.5, total_jogos_atuais - 0.5]
 
-        # Criação da figura básica do Plotly (substitua pelo seu go.Bar/go.Scatter atual)
+        # Criação da figura básica do Plotly
         fig = go.Figure()
 
-        # EXEMPLO: Adicionando a barra de Pontos Pró (PP) - Ajuste conforme seu layout atual
+        # Adicionando a barra vertical com as cores dinâmicas calculadas no loop acima
         fig.add_trace(go.Bar(
             x=df_grafico["Rotulo_EixoX"],
             y=df_grafico["PP"],
             name="Pontos Pró",
-            marker_color="#00b4d8",
+            marker_color=cores_barras, # Aplica a lista de cores aqui
             text=df_grafico["Texto_Coluna"],
             textposition="auto",
             hoverinfo="text",
@@ -233,21 +240,20 @@ else:
             barmode="group",
             xaxis=dict(
                 type="category",
-                # Mantém o tamanho fixo ideal por barra para não amassar no celular
                 range=range_inicial, 
                 # 1. ATIVA A BARRA DE MOVIMENTAÇÃO (Range Slider inferior)
                 rangeslider=dict(
                     visible=True,
-                    thickness=0.05 # Espessura discreta para telas menores
+                    thickness=0.05
                 ),
-                # 2. ADICIONA BOTÕES DE SETA/NAVEGAÇÃO ALTERNATIVA (Updatemenus)
+                # 2. ADICIONA BOTÕES DE SETA/NAVEGAÇÃO ALTERNATIVA
                 updatemenus=[
                     dict(
                         type="buttons",
                         direction="left",
                         pad={"r": 10, "t": 10},
                         showactive=False,
-                        x=0.5, # Centraliza os botões acima do gráfico
+                        x=0.5,
                         xanchor="center",
                         y=1.2,
                         yanchor="top",
@@ -268,7 +274,7 @@ else:
             ),
             yaxis=dict(title="Pontos"),
             margin=dict(l=20, r=20, t=60, b=20),
-            height=500, # Altura fixa ideal para visualização em pé no smartphone
+            height=500,
             template="plotly_dark"
         )
 
