@@ -202,7 +202,7 @@ else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
         try:
-                # Lógica para definir a cor de cada barra individualmente com base no placar
+        # Lógica para definir a cor de cada barra individualmente com base no placar
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
