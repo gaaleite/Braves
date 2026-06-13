@@ -155,29 +155,10 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=True)
 
+        # Rótulo padrão limpo e legível
         df_grafico["Rotulo_EixoX"] = "J" + df_grafico["JOGO"] + " (" + df_grafico["ANO"] + ")"
         df_grafico["Texto_Coluna"] = df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str)
         df_grafico["Texto_Hover"] = "Jogo " + df_grafico["JOGO"] + "<br>Data: " + df_grafico["DATA"] + "<br>Adversário: " + df_grafico["ADVERSARIO"]
-
-        # --- MAPEAMENTO DE CORES DOS TEXTOS DO EIXO X POR ANO ---
-        cores_anos = {
-            "2016": "#4cc9f0",  # Azul claro
-            "2017": "#ffd166",  # Amarelo
-            "2018": "#ff4d4d",  # Vermelho
-            "2019": "#06d6a0",  # Verde esmeralda
-            "2020": "#e0aaff",  # Roxo claro
-            "2021": "#f77f00",  # Laranja
-            "2022": "#ffc6ff",  # Rosa bebê
-            "2023": "#00b4d8",  # Azul ciano
-            "2024": "#bf5af2",  # Violeta
-            "2025": "#00f5d4",  # Turquesa
-            "2026": "#ff9f1c",  # Laranja escuro
-        }
-
-        # Cria a lista de cores que será aplicada nas letras das identificações
-        lista_cores_letras = []
-        for ano in df_grafico["ANO"]:
-            lista_cores_letras.append(cores_anos.get(ano, "#ffffff"))
 
         # Define as cores originais das barras por Resultado (Vitória = Verde)
         cores_barras = []
@@ -227,11 +208,25 @@ else:
             xaxis=dict(
                 type="category",
                 range=range_atual,
-                tickfont_color=lista_cores_letras, # COLORE AS IDENTIFICAÇÕES DE CADA ANO
                 rangeslider=dict(visible=True, thickness=0.08)
             ),
             yaxis=dict(title="Pontos")
         )
+
+        # --- LÓGICA AUTOMÁTICA DE LINHAS DIVISÓRIAS POR MUDANÇA DE ANO ---
+        # Varre os jogos procurando o ponto exato onde o ano muda para traçar a linha divisória
+        ultimo_ano = None
+        for i, ano_atual in enumerate(df_grafico["ANO"]):
+            if ultimo_ano is not None and ano_atual != ultimo_ano:
+                # Desenha uma linha vertical tracejada branca entre os anos diferentes
+                fig.add_vline(
+                    x=i - 0.5, 
+                    line_width=1.5, 
+                    line_dash="dash", 
+                    line_color="#ffffff",
+                    opacity=0.6
+                )
+            ultimo_ano = ano_atual
 
         st.plotly_chart(fig, use_container_width=True)
         
