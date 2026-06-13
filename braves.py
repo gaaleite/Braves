@@ -20,15 +20,20 @@ h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
 
-/* 1. Altera fundo de caixas de texto (inputs) e seletores (selectbox) para branco */
-input, select, div[data-baseweb="select"] > div {
+/* 1. Altera fundo de caixas de texto, seletores e tags do multiselect para branco */
+input, select, div[data-baseweb="select"] > div, div[data-baseweb="tag"] {
     background-color: #ffffff !important;
     color: #000000 !important;
 }
 
-/* 2. Força todas as letras internas do selectbox ativo e do placeholder ficarem pretas */
-div[data-baseweb="select"] *, input::placeholder {
+/* 2. Força todas as letras internas, tags e placeholder a ficarem pretas */
+div[data-baseweb="select"] *, input::placeholder, div[data-baseweb="tag"] span {
     color: #000000 !important;
+}
+
+/* Concerteza o botão de fechar (X) das tags selecionadas para ficar preto */
+div[data-baseweb="tag"] role[button], div[data-baseweb="tag"] svg {
+    fill: #000000 !important;
 }
 
 /* 3. Ajusta o fundo e texto do menu dropdown (quando clicado) para não herdar o tema escuro */
@@ -117,7 +122,10 @@ else:
 
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓️ Data", placeholder="Ex: 07/06").strip()
-    busca_ano = f2.text_input("📅 Ano", placeholder="Ex: 2026").strip()
+    
+    # NOVO FILTRO: Agora busca_ano permite selecionar múltiplos anos simultaneamente de forma automática
+    opcoes_anos = sorted(list(df_jogos["ANO"].unique()), reverse=True)
+    busca_anos = f2.multiselect("📅 Anos (Selecione 1 ou mais)", opcoes_anos, placeholder="Ex: Escolha os anos")
     
     opcoes_time = ["Todos"] + sorted(list(df_jogos["FAIXA_ETARIA"].unique()))
     busca_time_categoria = f3.selectbox("🛡️ Time (Categoria)", opcoes_time)
@@ -131,8 +139,11 @@ else:
 
     if busca_data:
         df_filtrado = df_filtrado[df_filtrado["DATA"].str.contains(busca_data, na=False)]
-    if busca_ano:
-        df_filtrado = df_filtrado[df_filtrado["ANO"].str.contains(busca_ano, na=False)]
+    
+    # Aplica o filtro de múltiplos anos se houver pelo menos um selecionado
+    if busca_anos:
+        df_filtrado = df_filtrado[df_filtrado["ANO"].isin(busca_anos)]
+        
     if busca_time_categoria != "Todos":
         df_filtrado = df_filtrado[df_filtrado["FAIXA_ETARIA"] == busca_time_categoria]
     if busca_cidade:
@@ -161,49 +172,42 @@ else:
         st.markdown("---")
         st.write("### 📈 Histórico Dinâmico de Atividade")
 
-        # Organiza os dados cronologicamente
         df_grafico = df_filtrado.copy()
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=True)
 
-        df_grafico["Rotulo_EixoX"] = "Jogo " + df_grafico["JOGO"]
+        # Rótulo com Jogo + Ano para facilitar a visualização comparativa na barra
+        df_grafico["Rotulo_EixoX"] = "J" + df_grafico["JOGO"] + " (" + df_grafico["ANO"] + ")"
         df_grafico["Texto_Coluna"] = "<b>" + df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str) + "</b><br><span style='font-size:9px; opacity:0.8;'>" + df_grafico["DATA"] + "</span>"
         df_grafico["Texto_Hover"] = "<b>Jogo " + df_grafico["JOGO"] + "</b><br>📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>🛡️ Categoria: " + df_grafico["FAIXA_ETARIA"] + "<br>⚔️ Adversário: " + df_grafico["ADVERSARIO"] + "<br>🏆 Placar: " + df_grafico["PP"].astype(str) + " x " + df_grafico["PC"].astype(str)
 
-        # Lógica para definir a cor de cada barra individualmente com base no placar
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
-                cores_barras.append("#00c49f")  # Verde moderno para Vitória
+                cores_barras.append("#00c49f")  # Verde para Vitória
             elif pp < pc:
                 cores_barras.append("#ef476f")  # Vermelho para Derrota
             else:
                 cores_barras.append("#ffd166")  # Amarelo para Empate
 
-        # --- CONTROLE DE JANELA USANDO BOTÕES NATIVOS DO STREAMLIT ---
+        # --- CONTROLE DE JANELA USANDO BOTÕES NATIVOS ---
         total_jogos_atuais = len(df_grafico)
         
-        # Cria os botões lado a lado para o usuário escolher o foco com segurança
         col_btn1, col_btn2 = st.columns(2)
-        
-        # Inicializa o estado de visualização
         if "modo_janela" not in st.session_state:
             st.session_state["modo_janela"] = "recentes"
 
         if col_btn1.button("⬅️ Focar nos Jogos Mais Antigos", use_container_width=True):
             st.session_state["modo_janela"] = "antigos"
-            
         if col_btn2.button("Focar nos Jogos Mais Recentes ➡️", use_container_width=True):
             st.session_state["modo_janela"] = "recentes"
 
-        # Define os limites do eixo X com base na escolha do botão
         if st.session_state["modo_janela"] == "antigos":
             range_atual = [-0.5, 14.5]
         else:
             indice_inicial = max(0, total_jogos_atuais - 15)
             range_atual = [indice_inicial - 0.5, total_jogos_atuais - 0.5]
 
-        # Montagem limpa da figura Plotly
         fig = go.Figure()
         fig.add_trace(go.Bar(
             x=df_grafico["Rotulo_EixoX"],
@@ -226,18 +230,13 @@ else:
         fig.update_xaxes(
             type="category",
             range=range_atual,
-            rangeslider=dict(visible=True, thickness=0.08)  # Mantém a barra de arrastar por toque ativa
+            rangeslider=dict(visible=True, thickness=0.08)
         )
 
         fig.update_yaxes(title_text="Pontos")
 
-        # Renderização do gráfico
         st.plotly_chart(fig, use_container_width=True)
         
         # --- EXIBIÇÃO DA TABELA DE REGISTROS LOGO ABAIXO ---
         st.markdown("---")
         st.write("### 📋 Tabela de Registros Filtrados")
-        st.dataframe(df_filtrado, use_container_width=True)
-        
-    else:
-        st.warning("⚠️ Nenhum registro encontrado para os filtros selecionados.")
