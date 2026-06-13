@@ -211,7 +211,7 @@ else:
         indice_inicial = max(0, total_jogos_atuais - jogos_visiveis_inicialmente)
         range_inicial = [indice_inicial - 0.5, total_jogos_atuais - 0.5]
 
-        fig = go.Figure()
+                fig = go.Figure()
 
         fig.add_trace(go.Bar(
             x=df_grafico["Rotulo_EixoX"],
@@ -230,3 +230,40 @@ else:
                 type="category",
                 range=range_inicial, 
                 rangeslider=dict(
+                    visible=True,
+                    thickness=0.06
+                )
+            ),
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    direction="left",
+                    pad={"r": 10, "t": 10},
+                    showactive=False,
+                    x=0.5,
+                    xanchor="center",
+                    y=1.2,
+                    yanchor="top",
+                    buttons=[
+                        dict(
+                            label="⬅️ Ver Mais Antigos",
+                            method="relayout",
+                            args=[{"xaxis.range": [0, jogos_visiveis_inicialmente - 0.5]}]
+                        ),
+                        dict(
+                            label="Ver Mais Recentes ➡️",
+                            method="relayout",
+                            args=[{"xaxis.range": range_inicial}]
+                        )
+                    ]
+                )
+            ],
+            yaxis=dict(title="Pontos"),
+            margin=dict(l=20, r=20, t=75, b=20),
+            height=520,
+            template="plotly_dark"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("⚠️ Nenhum registro encontrado para os filtros selecionados.")
