@@ -203,7 +203,7 @@ else:
             else:
                 cores_barras.append("#ffd166")  # Amarelo para Empate
 
-        # --- CONFIGURAÇÃO DO GRÁFICO COM ROLAGEM E BOTÕES ALTERNATIVOS ---
+        # --- CONFIGURAÇÃO DO GRÁFICO ---
         jogos_visiveis_inicialmente = 15
         total_jogos_atuais = len(df_grafico)
         
@@ -213,6 +213,7 @@ else:
 
         fig = go.Figure()
 
+        # Adiciona os dados das barras
         fig.add_trace(go.Bar(
             x=df_grafico["Rotulo_EixoX"],
             y=df_grafico["PP"],
@@ -224,12 +225,11 @@ else:
             hovertext=df_grafico["Texto_Hover"]
         ))
 
+        # Configura as propriedades de visualização gerais
         fig.update_layout(
             barmode="group",
-            xaxis=dict(
-                type="category",
-                range=range_inicial, 
-                rangeslider=dict(
-                    visible=True,
-                    thickness=0.06
-                )
+            template="plotly_dark",
+            height=520,
+            margin=dict(l=20, r=20, t=75, b=20)
+        )
+
