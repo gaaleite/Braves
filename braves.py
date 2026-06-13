@@ -170,14 +170,15 @@ else:
         df_grafico["Texto_Coluna"] = "<b>" + df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str) + "</b><br><span style='font-size:9px; opacity:0.8;'>" + df_grafico["DATA"] + "</span>"
         df_grafico["Texto_Hover"] = "<b>Jogo " + df_grafico["JOGO"] + "</b><br>📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>🛡️ Categoria: " + df_grafico["FAIXA_ETARIA"] + "<br>⚔️ Adversário: " + df_grafico["ADVERSARIO"] + "<br>🏆 Placar: " + df_grafico["PP"].astype(str) + " x " + df_grafico["PC"].astype(str)
 
+        # Lógica para definir a cor de cada barra individualmente com base no placar
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
-                cores_barras.append("#00b4d8")
+                cores_barras.append("#00c49f")  # Verde moderno para Vitória
             elif pp < pc:
-                cores_barras.append("#ef476f")
+                cores_barras.append("#ef476f")  # Vermelho para Derrota
             else:
-                cores_barras.append("#ffd166")
+                cores_barras.append("#ffd166")  # Amarelo para Empate
 
         # --- CONTROLE DE JANELA USANDO BOTÕES NATIVOS DO STREAMLIT ---
         total_jogos_atuais = len(df_grafico)
