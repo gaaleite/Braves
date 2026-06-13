@@ -12,7 +12,7 @@ st.title("🏈 Braves Academy - Painel de Controle")
 css_fundo_azul_marinho = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #0a192f; /* Azul-marinho profundo e profissional */
+    background-color: #0a192f; /* Azul-marinho profissional */
 }
 
 /* Força títulos e subtextos principais a ficarem brancos */
@@ -174,7 +174,12 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=True)
 
-        # Mapeamento de cores específicas para as letras de cada ano no eixo X
+        # Rótulo de texto limpo para o eixo X
+        df_grafico["Rotulo_EixoX"] = "J" + df_grafico["JOGO"] + " (" + df_grafico["ANO"] + ")"
+        df_grafico["Texto_Coluna"] = "<b>" + df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str) + "</b><br><span style='font-size:9px; opacity:0.8;'>" + df_grafico["DATA"] + "</span>"
+        df_grafico["Texto_Hover"] = "<b>Jogo " + df_grafico["JOGO"] + "</b><br>📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>🛡️ Categoria: " + df_grafico["FAIXA_ETARIA"] + "<br>⚔️ Adversário: " + df_grafico["ADVERSARIO"] + "<br>🏆 Placar: " + df_grafico["PP"].astype(str) + " x " + df_grafico["PC"].astype(str)
+
+        # Mapeamento de cores específicas para as letras de cada ano
         cores_letras_ano = {
             "2016": "#4cc9f0",  # Azul claro
             "2017": "#ffd166",  # Amarelo
@@ -189,19 +194,12 @@ else:
             "2026": "#ff9f1c",  # Laranja escuro
         }
 
-        # Constrói o rótulo aplicando a cor correspondente apenas na string do Ano
-        rotulos_coloridos = []
-        for jogo, ano in zip(df_grafico["JOGO"], df_grafico["ANO"]):
-            cor_ano = cores_letras_ano.get(ano, "#ffffff") # Branco se não mapeado
-            texto_formatado = f"J{jogo} <span style='color:{cor_ano}; font-weight:bold;'>({ano})</span>"
-            rotulos_coloridos.append(texto_formatado)
-            
-        df_grafico["Rotulo_EixoX"] = rotulos_coloridos
+        # Cria a lista de cores que será injetada diretamente nas propriedades de texto do eixo X
+        lista_cores_eixox = []
+        for ano in df_grafico["ANO"]:
+            lista_cores_eixox.append(cores_letras_ano.get(ano, "#ffffff"))
 
-        df_grafico["Texto_Coluna"] = "<b>" + df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str) + "</b><br><span style='font-size:9px; opacity:0.8;'>" + df_grafico["DATA"] + "</span>"
-        df_grafico["Texto_Hover"] = "<b>Jogo " + df_grafico["JOGO"] + "</b><br>📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>🛡️ Categoria: " + df_grafico["FAIXA_ETARIA"] + "<br>⚔️ Adversário: " + df_grafico["ADVERSARIO"] + "<br>🏆 Placar: " + df_grafico["PP"].astype(str) + " x " + df_grafico["PC"].astype(str)
-
-        # Retorna a coloração original baseada nos resultados (Vitória/Derrota/Empate)
+        # Mantém coloração original baseada nos resultados (Vitória/Derrota/Empate)
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
@@ -233,3 +231,7 @@ else:
         fig.add_trace(go.Bar(
             x=df_grafico["Rotulo_EixoX"],
             y=df_grafico["PP"],
+            name="Pontos Pró",
+            marker_color=cores_barras,
+            text=df_grafico["Texto_Coluna"],
+            textposition="auto",
