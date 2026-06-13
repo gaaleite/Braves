@@ -31,7 +31,7 @@ div[data-baseweb="select"] *, input::placeholder, div[data-baseweb="tag"] span {
     color: #000000 !important;
 }
 
-/* Concerteza o botão de fechar (X) das tags selecionadas para ficar preto */
+/* Conserta o botão de fechar (X) das tags selecionadas para ficar preto */
 div[data-baseweb="tag"] role[button], div[data-baseweb="tag"] svg {
     fill: #000000 !important;
 }
@@ -123,7 +123,6 @@ else:
     f1, f2, f3 = st.columns(3)
     busca_data = f1.text_input("🗓️ Data", placeholder="Ex: 07/06").strip()
     
-    # NOVO FILTRO: Agora busca_ano permite selecionar múltiplos anos simultaneamente de forma automática
     opcoes_anos = sorted(list(df_jogos["ANO"].unique()), reverse=True)
     busca_anos = f2.multiselect("📅 Anos (Selecione 1 ou mais)", opcoes_anos, placeholder="Ex: Escolha os anos")
     
@@ -140,7 +139,6 @@ else:
     if busca_data:
         df_filtrado = df_filtrado[df_filtrado["DATA"].str.contains(busca_data, na=False)]
     
-    # Aplica o filtro de múltiplos anos se houver pelo menos um selecionado
     if busca_anos:
         df_filtrado = df_filtrado[df_filtrado["ANO"].isin(busca_anos)]
         
@@ -176,11 +174,34 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=True)
 
-        # Rótulo com Jogo + Ano para facilitar a visualização comparativa na barra
-        df_grafico["Rotulo_EixoX"] = "J" + df_grafico["JOGO"] + " (" + df_grafico["ANO"] + ")"
+        # Mapeamento de cores específicas para as letras de cada ano no eixo X
+        cores_letras_ano = {
+            "2016": "#4cc9f0",  # Azul claro
+            "2017": "#ffd166",  # Amarelo
+            "2018": "#ff4d4d",  # Vermelho
+            "2019": "#06d6a0",  # Verde esmeralda
+            "2020": "#e0aaff",  # Roxo claro
+            "2021": "#f77f00",  # Laranja
+            "2022": "#ffc6ff",  # Rosa bebê
+            "2023": "#00b4d8",  # Azul ciano
+            "2024": "#bf5af2",  # Violeta
+            "2025": "#00f5d4",  # Turquesa
+            "2026": "#ff9f1c",  # Laranja escuro
+        }
+
+        # Constrói o rótulo aplicando a cor correspondente apenas na string do Ano
+        rotulos_coloridos = []
+        for jogo, ano in zip(df_grafico["JOGO"], df_grafico["ANO"]):
+            cor_ano = cores_letras_ano.get(ano, "#ffffff") # Branco se não mapeado
+            texto_formatado = f"J{jogo} <span style='color:{cor_ano}; font-weight:bold;'>({ano})</span>"
+            rotulos_coloridos.append(texto_formatado)
+            
+        df_grafico["Rotulo_EixoX"] = rotulos_coloridos
+
         df_grafico["Texto_Coluna"] = "<b>" + df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str) + "</b><br><span style='font-size:9px; opacity:0.8;'>" + df_grafico["DATA"] + "</span>"
         df_grafico["Texto_Hover"] = "<b>Jogo " + df_grafico["JOGO"] + "</b><br>📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>🛡️ Categoria: " + df_grafico["FAIXA_ETARIA"] + "<br>⚔️ Adversário: " + df_grafico["ADVERSARIO"] + "<br>🏆 Placar: " + df_grafico["PP"].astype(str) + " x " + df_grafico["PC"].astype(str)
 
+        # Retorna a coloração original baseada nos resultados (Vitória/Derrota/Empate)
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
@@ -212,31 +233,3 @@ else:
         fig.add_trace(go.Bar(
             x=df_grafico["Rotulo_EixoX"],
             y=df_grafico["PP"],
-            name="Pontos Pró",
-            marker_color=cores_barras,
-            text=df_grafico["Texto_Coluna"],
-            textposition="auto",
-            hoverinfo="text",
-            hovertext=df_grafico["Texto_Hover"]
-        ))
-
-        fig.update_layout(
-            barmode="group",
-            template="plotly_dark",
-            height=450,
-            margin=dict(l=10, r=10, t=10, b=10)
-        )
-
-        fig.update_xaxes(
-            type="category",
-            range=range_atual,
-            rangeslider=dict(visible=True, thickness=0.08)
-        )
-
-        fig.update_yaxes(title_text="Pontos")
-
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # --- EXIBIÇÃO DA TABELA DE REGISTROS LOGO ABAIXO ---
-        st.markdown("---")
-        st.write("### 📋 Tabela de Registros Filtrados")
