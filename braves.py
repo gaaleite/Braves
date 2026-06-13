@@ -202,15 +202,15 @@ else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
         try:
-        # Lógica para definir a cor de cada barra individualmente com base no placar
+                # Lógica para definir a cor de cada barra individualmente com base no placar
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
-                cores_barras.append("#00b4d8") # Azul para Vitória
+                cores_barras.append("#00b4d8")  # Azul para Vitória
             elif pp < pc:
-                cores_barras.append("#ef476f") # Vermelho para Derrota
+                cores_barras.append("#ef476f")  # Vermelho para Derrota
             else:
-                cores_barras.append("#ffd166") # Amarelo para Empate
+                cores_barras.append("#ffd166")  # Amarelo para Empate
 
         # --- CONFIGURAÇÃO DO GRÁFICO COM ROLAGEM (RANGESLIDER) E BOTÕES ALTERNATIVOS ---
         jogos_visiveis_inicialmente = 15
@@ -228,7 +228,7 @@ else:
             x=df_grafico["Rotulo_EixoX"],
             y=df_grafico["PP"],
             name="Pontos Pró",
-            marker_color=cores_barras, # Aplica a lista de cores aqui
+            marker_color=cores_barras,  # Aplica a lista de cores aqui
             text=df_grafico["Texto_Coluna"],
             textposition="auto",
             hoverinfo="text",
@@ -280,6 +280,7 @@ else:
 
         # Renderiza o gráfico adaptável na tela
         st.plotly_chart(fig, use_container_width=True)
+
 
 
         except Exception as e:
