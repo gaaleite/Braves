@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.express as px
 import urllib.request
 import io
 
@@ -12,39 +12,27 @@ st.title("🏈 Braves Academy - Painel de Controle")
 css_fundo_azul_marinho = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #0a192f; /* Azul-marinho profissional */
+    background-color: #0a192f;
 }
-
-/* Força títulos e subtextos principais a ficarem brancos */
 h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
-
-/* 1. Altera fundo de caixas de texto, seletores e tags do multiselect para branco */
 input, select, div[data-baseweb="select"] > div, div[data-baseweb="tag"] {
     background-color: #ffffff !important;
     color: #000000 !important;
 }
-
-/* 2. Força todas as letras internas, tags e placeholder a ficarem pretas */
 div[data-baseweb="select"] *, input::placeholder, div[data-baseweb="tag"] span {
     color: #000000 !important;
 }
-
-/* Conserta o botão de fechar (X) das tags selecionadas para ficar preto */
 div[data-baseweb="tag"] role[button], div[data-baseweb="tag"] svg {
     fill: #000000 !important;
 }
-
-/* 3. Ajusta o fundo e texto do menu dropdown (quando clicado) para não herdar o tema escuro */
 div[role="listbox"] ul {
     background-color: #ffffff !important;
 }
 div[role="listbox"] li {
     color: #000000 !important;
 }
-
-/* 4. Altera o comportamento visual ao passar o mouse por cima das opções da lista */
 div[role="listbox"] li:hover {
     background-color: #f0f2f6 !important;
     color: #000000 !important;
@@ -56,9 +44,7 @@ st.markdown(css_fundo_azul_marinho, unsafe_allow_html=True)
 @st.cache_data(ttl=5)
 def carregar_dados():
     try:
-        # Link oficial fornecido
         url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
-        
         url_csv = url_original.replace("/pubhtml", "/pub")
         if "&output=csv" not in url_csv:
             url_csv += "&output=csv"
@@ -68,7 +54,6 @@ def carregar_dados():
             dados_brutos = response.read()
             
         df = pd.read_csv(io.BytesIO(dados_brutos), header=None, on_bad_lines="skip")
-        
         if df.empty:
             return pd.DataFrame()
 
@@ -103,12 +88,10 @@ def carregar_dados():
             df_limpo["ADVERSARIO"] = "Desconhecido"
 
         df_limpo = df_limpo[df_limpo["JOGO"].str.isnumeric()]
-
         df_limpo["PP"] = pd.to_numeric(pp_raw.loc[df_limpo.index], errors="coerce").fillna(0).astype(int)
         df_limpo["PC"] = pd.to_numeric(pc_raw.loc[df_limpo.index], errors="coerce").fillna(0).astype(int)
 
         return df_limpo.reset_index(drop=True)
-
     except Exception as e:
         st.error(f"Erro ao processar dados da tabela: {e}")
         return pd.DataFrame()
@@ -116,7 +99,7 @@ def carregar_dados():
 df_jogos = carregar_dados()
 
 if df_jogos.empty:
-    st.error("⚠️ O banco de dados retornou vazio. Verifique se o link foi publicado corretamente no menu do Drive.")
+    st.error("⚠️ O banco de dados retornou vazio. Verifique a publicação no Drive.")
 else:
     st.write("### 🔍 Filtros de Pesquisa")
 
@@ -138,10 +121,8 @@ else:
 
     if busca_data:
         df_filtrado = df_filtrado[df_filtrado["DATA"].str.contains(busca_data, na=False)]
-    
     if busca_anos:
         df_filtrado = df_filtrado[df_filtrado["ANO"].isin(busca_anos)]
-        
     if busca_time_categoria != "Todos":
         df_filtrado = df_filtrado[df_filtrado["FAIXA_ETARIA"] == busca_time_categoria]
     if busca_cidade:
@@ -174,45 +155,23 @@ else:
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
         df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=True)
 
-        # Rótulo de texto limpo para o eixo X
         df_grafico["Rotulo_EixoX"] = "J" + df_grafico["JOGO"] + " (" + df_grafico["ANO"] + ")"
-        df_grafico["Texto_Coluna"] = "<b>" + df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str) + "</b><br><span style='font-size:9px; opacity:0.8;'>" + df_grafico["DATA"] + "</span>"
-        df_grafico["Texto_Hover"] = "<b>Jogo " + df_grafico["JOGO"] + "</b><br>📅 Data: " + df_grafico["DATA"] + " / " + df_grafico["ANO"] + "<br>🛡️ Categoria: " + df_grafico["FAIXA_ETARIA"] + "<br>⚔️ Adversário: " + df_grafico["ADVERSARIO"] + "<br>🏆 Placar: " + df_grafico["PP"].astype(str) + " x " + df_grafico["PC"].astype(str)
+        df_grafico["Texto_Coluna"] = df_grafico["PP"].astype(str) + "x" + df_grafico["PC"].astype(str)
+        df_grafico["Texto_Hover"] = "Jogo " + df_grafico["JOGO"] + "<br>Data: " + df_grafico["DATA"] + "<br>Adversário: " + df_grafico["ADVERSARIO"]
 
-        # Mapeamento de cores específicas para as letras de cada ano
-        cores_letras_ano = {
-            "2016": "#4cc9f0",  # Azul claro
-            "2017": "#ffd166",  # Amarelo
-            "2018": "#ff4d4d",  # Vermelho
-            "2019": "#06d6a0",  # Verde esmeralda
-            "2020": "#e0aaff",  # Roxo claro
-            "2021": "#f77f00",  # Laranja
-            "2022": "#ffc6ff",  # Rosa bebê
-            "2023": "#00b4d8",  # Azul ciano
-            "2024": "#bf5af2",  # Violeta
-            "2025": "#00f5d4",  # Turquesa
-            "2026": "#ff9f1c",  # Laranja escuro
-        }
-
-        # Cria a lista de cores que será injetada diretamente nas propriedades de texto do eixo X
-        lista_cores_eixox = []
-        for ano in df_grafico["ANO"]:
-            lista_cores_eixox.append(cores_letras_ano.get(ano, "#ffffff"))
-
-        # Mantém coloração original baseada nos resultados (Vitória/Derrota/Empate)
+        # Define as cores originais das barras por Resultado
         cores_barras = []
         for pp, pc in zip(df_grafico["PP"], df_grafico["PC"]):
             if pp > pc:
-                cores_barras.append("#00c49f")  # Verde para Vitória
+                cores_barras.append("#00c49f")
             elif pp < pc:
-                cores_barras.append("#ef476f")  # Vermelho para Derrota
+                cores_barras.append("#ef476f")
             else:
-                cores_barras.append("#ffd166")  # Amarelo para Empate
+                cores_barras.append("#ffd166")
 
-        # --- CONTROLE DE JANELA USANDO BOTÕES NATIVOS ---
         total_jogos_atuais = len(df_grafico)
-        
         col_btn1, col_btn2 = st.columns(2)
+        
         if "modo_janela" not in st.session_state:
             st.session_state["modo_janela"] = "recentes"
 
@@ -227,11 +186,37 @@ else:
             indice_inicial = max(0, total_jogos_atuais - 15)
             range_atual = [indice_inicial - 0.5, total_jogos_atuais - 0.5]
 
-        fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=df_grafico["Rotulo_EixoX"],
-            y=df_grafico["PP"],
-            name="Pontos Pró",
+        # RECONSTRUÇÃO USANDO PLOTLY EXPRESS (Evita erros de sintaxe por completo)
+        fig = px.bar(
+            df_grafico,
+            x="Rotulo_EixoX",
+            y="PP",
+            text="Texto_Coluna",
+            custom_data=["Texto_Hover"]
+        )
+
+        fig.update_traces(
             marker_color=cores_barras,
-            text=df_grafico["Texto_Coluna"],
             textposition="auto",
+            hovertemplate="%{customdata[0]}<extra></extra>"
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=450,
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis=dict(
+                type="category",
+                range=range_atual,
+                rangeslider=dict(visible=True, thickness=0.08)
+            ),
+            yaxis=dict(title="Pontos")
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown("---")
+        st.write("### 📋 Tabela de Registros Filtrados")
+        st.dataframe(df_filtrado, use_container_width=True)
+    else:
+        st.warning("⚠️ Nenhum registro encontrado para os filtros selecionados.")
