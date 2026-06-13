@@ -23,6 +23,10 @@ input, select, div[data-baseweb="select"] {
     background-color: #ffffff !important;
     color: #000000 !important;
 }
+/* Garante que o texto selecionado e as opções do dropdown fiquem pretos */
+div[data-baseweb="select"] *, input::placeholder {
+    color: #000000 !important;
+}
 </style>
 """
 st.markdown(css_fundo_azul_marinho, unsafe_allow_html=True)
