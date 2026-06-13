@@ -208,7 +208,7 @@ else:
             xaxis=dict(
                 type="category",
                 range=range_atual,
-                tittle="Anos",
+                title_text="Anos",
                 rangeslider=dict(visible=True, thickness=0.08)
             ),
             yaxis=dict(title="Pontos")
