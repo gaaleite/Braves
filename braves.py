@@ -202,66 +202,79 @@ else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
         try:
-            fig = go.Figure()
-            valores_y = [1] * len(df_grafico)
-            
-            fig.add_trace(
-                go.Bar(
-                    name="Jogos",
-                    x=df_grafico["Rotulo_EixoX"],
-                    y=valores_y,
-                    text=df_grafico["Texto_Coluna"],
-                    textposition="inside", # Coloca o placar e data 100% dentro da barra
-                    insidetextanchor="middle", # Mantém o texto centralizado na coluna
-                    textfont=dict(size=14, color="#ffffff"),
-                    hovertemplate=df_grafico["Texto_Hover"] + "<extra></extra>",
-                    marker=dict(
-                        color=cores_barras,
-                        line=dict(color="#778899", width=1)
-                    )
-                )
-            )
-            
-            # Ajustes estruturais e estabilização de tamanho de letra
-            fig.update_layout(
-                autosize=True,
-                height=350,
-                margin=dict(l=10, r=10, t=20, b=30),
-                showlegend=False,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                # Garante tamanho de fonte unificado para o texto de dentro das barras, impedindo distorções no celular
-                uniformtext=dict(mode="hide", minsize=12),
-                yaxis=dict(showticklabels=False, showgrid=False, fixedrange=True),
-                xaxis=dict(
-                    tickfont=dict(size=14, color="#ffffff"),
-                    tickangle=0,
-                    fixedrange=True,
-                    type='category'
+                    # --- CONFIGURAÇÃO DO GRÁFICO COM ROLAGEM (RANGESLIDER) E BOTÕES ALTERNATIVOS ---
+        
+        # Define quantos jogos aparecem na tela por vez ao abrir (ex: os últimos 15 jogos)
+        # Isso impede que o gráfico esmague as 277 barras na tela do celular
+        jogos_visiveis_inicialmente = 15
+        total_jogos_atuais = len(df_grafico)
+        
+        # Configura a janela inicial do eixo X para exibir os jogos mais recentes
+        indice_inicial = max(0, total_jogos_atuais - jogos_visiveis_inicialmente)
+        range_inicial = [indice_inicial - 0.5, total_jogos_atuais - 0.5]
+
+        # Criação da figura básica do Plotly (substitua pelo seu go.Bar/go.Scatter atual)
+        fig = go.Figure()
+
+        # EXEMPLO: Adicionando a barra de Pontos Pró (PP) - Ajuste conforme seu layout atual
+        fig.add_trace(go.Bar(
+            x=df_grafico["Rotulo_EixoX"],
+            y=df_grafico["PP"],
+            name="Pontos Pró",
+            marker_color="#00b4d8",
+            text=df_grafico["Texto_Coluna"],
+            textposition="auto",
+            hoverinfo="text",
+            hovertext=df_grafico["Texto_Hover"]
+        ))
+
+        # Customização do Layout para Mobile e inclusão dos Controles
+        fig.update_layout(
+            barmode="group",
+            xaxis=dict(
+                type="category",
+                # Mantém o tamanho fixo ideal por barra para não amassar no celular
+                range=range_inicial, 
+                # 1. ATIVA A BARRA DE MOVIMENTAÇÃO (Range Slider inferior)
+                rangeslider=dict(
+                    visible=True,
+                    thickness=0.05 # Espessura discreta para telas menores
                 ),
-            )
-            
-            # Remove as letras do eixo X (Jg X) apenas no celular, preservando no computador
-            css_responsivo_grafico = """
-            <style>
-@media (max-width: 768px) {
-    /* Esconde os textos do eixo X */
-    g.xtick text {
-        display: none !important;
-    }
-    /* Adiciona um leve espaço de respiro nas laterais do celular */
-    [data-testid="stColumn"], [data-testid="stHorizontalBlock"], .stMainBlockContainer {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
-        margin-left: 0px !important;
-        margin-right: 0px !important;
-    }
-}
-</style>
-"""
-            st.markdown(css_responsivo_grafico, unsafe_allow_html=True)
-            
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                # 2. ADICIONA BOTÕES DE SETA/NAVEGAÇÃO ALTERNATIVA (Updatemenus)
+                updatemenus=[
+                    dict(
+                        type="buttons",
+                        direction="left",
+                        pad={"r": 10, "t": 10},
+                        showactive=False,
+                        x=0.5, # Centraliza os botões acima do gráfico
+                        xanchor="center",
+                        y=1.2,
+                        yanchor="top",
+                        buttons=[
+                            dict(
+                                label="⬅️ Ver Mais Antigos",
+                                method="relayout",
+                                args=[{"xaxis.range": [0, jogos_visiveis_inicialmente - 0.5]}]
+                            ),
+                            dict(
+                                label="Ver Mais Recentes ➡️",
+                                method="relayout",
+                                args=[{"xaxis.range": range_inicial}]
+                            )
+                        ]
+                    )
+                ]
+            ),
+            yaxis=dict(title="Pontos"),
+            margin=dict(l=20, r=20, t=60, b=20),
+            height=500, # Altura fixa ideal para visualização em pé no smartphone
+            template="plotly_dark"
+        )
+
+        # Renderiza o gráfico adaptável na tela
+        st.plotly_chart(fig, use_container_width=True)
+
 
         except Exception as e:
             st.error(f"Erro ao gerar o gráfico dinâmico: {e}")
