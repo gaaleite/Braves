@@ -189,7 +189,7 @@ else:
 
         fig = px.bar(
             df_grafico,
-            x="Rotulo_EixoX",
+            x="Anos",
             y="PP",
             text="Texto_Coluna",
             custom_data=["Texto_Hover"]
