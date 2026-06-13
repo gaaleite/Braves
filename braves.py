@@ -18,13 +18,28 @@ css_fundo_azul_marinho = """
 h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
-/* Altera o fundo das caixas de filtro para branco e o texto digitado para preto */
-input, select, div[data-baseweb="select"] {
+/* 1. Altera fundo de caixas de texto (inputs) e seletores (selectbox) para branco */
+input, select, div[data-baseweb="select"] > div {
     background-color: #ffffff !important;
     color: #000000 !important;
 }
-/* Garante que o texto selecionado e as opções do dropdown fiquem pretos */
+
+/* 2. Força todas as letras internas do selectbox ativo e do placeholder ficeram pretas */
 div[data-baseweb="select"] *, input::placeholder {
+    color: #000000 !important;
+}
+
+/* 3. Ajusta o fundo e texto do menu dropdown (quando clicado) para não herdar o tema escuro */
+div[role="listbox"] ul {
+    background-color: #ffffff !important;
+}
+div[role="listbox"] li {
+    color: #000000 !important;
+}
+
+/* 4. Altera o comportamento visual ao passar o mouse por cima das opções da lista */
+div[role="listbox"] li:hover {
+    background-color: #f0f2f6 !important;
     color: #000000 !important;
 }
 </style>
