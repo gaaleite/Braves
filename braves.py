@@ -52,7 +52,7 @@ st.markdown(css_fundo_azul_marinho, unsafe_allow_html=True)
 def carregar_dados():
     try:
         # Link oficial fornecido
-        url_original = "https://google.com"
+        url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
         
         # Correção do link: substituição direta e segura de texto sem gerar listas corrompidas
         url_csv = url_original.replace("/pubhtml", "/pub")
