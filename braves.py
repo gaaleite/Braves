@@ -18,9 +18,10 @@ css_fundo_azul_marinho = """
 h1, h2, h3, p, span, label, [data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
 }
-/* Altera as letras digitadas dentro das caixas de filtro para branco */
-input, select, div[data-baseweb="select"] * {
-    color: #ffffff !important;
+/* Altera o fundo das caixas de filtro para branco e o texto digitado para preto */
+input, select, div[data-baseweb="select"] {
+    background-color: #ffffff !important;
+    color: #000000 !important;
 }
 </style>
 """
