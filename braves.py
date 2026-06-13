@@ -52,7 +52,7 @@ st.markdown(css_fundo_azul_marinho, unsafe_allow_html=True)
 def carregar_dados():
     try:
         # Link oficial fornecido
-        url_original = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNg8QGIcR3oocTpka0agajCb-CF37OWvuJuG66FeMrhgAOY6qpg8zlej9iGK7dTQ1jQX8Gc_VahDPo/pubhtml?gid=516798055&single=true"
+        url_original = "https://google.com"
         
         # Correção do link: substituição direta e segura de texto sem gerar listas corrompidas
         url_csv = url_original.replace("/pubhtml", "/pub")
@@ -173,7 +173,7 @@ else:
 
         df_grafico = df_filtrado.copy()
         df_grafico["ID_NUM"] = pd.to_numeric(df_grafico["JOGO"], errors="coerce")
-        df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=True) # Alterado para cronológico nos eixos
+        df_grafico = df_grafico.sort_values(by="ID_NUM", ascending=True)
 
         # Rótulo minimalista para o eixo X de modo a não poluir as telas menores
         df_grafico["Rotulo_EixoX"] = "Jogo " + df_grafico["JOGO"]
@@ -207,11 +207,11 @@ else:
         jogos_visiveis_inicialmente = 15
         total_jogos_atuais = len(df_grafico)
         
-        # Configura a janela inicial focada nas 15 partidas mais recentes (fim da lista)
+        # Configura a janela inicial focada nas partidas mais recentes
         indice_inicial = max(0, total_jogos_atuais - jogos_visiveis_inicialmente)
         range_inicial = [indice_inicial - 0.5, total_jogos_atuais - 0.5]
 
-                fig = go.Figure()
+        fig = go.Figure()
 
         fig.add_trace(go.Bar(
             x=df_grafico["Rotulo_EixoX"],
@@ -233,37 +233,3 @@ else:
                     visible=True,
                     thickness=0.06
                 )
-            ),
-            updatemenus=[
-                dict(
-                    type="buttons",
-                    direction="left",
-                    pad={"r": 10, "t": 10},
-                    showactive=False,
-                    x=0.5,
-                    xanchor="center",
-                    y=1.2,
-                    yanchor="top",
-                    buttons=[
-                        dict(
-                            label="⬅️ Ver Mais Antigos",
-                            method="relayout",
-                            args=[{"xaxis.range": [0, jogos_visiveis_inicialmente - 0.5]}]
-                        ),
-                        dict(
-                            label="Ver Mais Recentes ➡️",
-                            method="relayout",
-                            args=[{"xaxis.range": range_inicial}]
-                        )
-                    ]
-                )
-            ],
-            yaxis=dict(title="Pontos"),
-            margin=dict(l=20, r=20, t=75, b=20),
-            height=520,
-            template="plotly_dark"
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("⚠️ Nenhum registro encontrado para os filtros selecionados.")
