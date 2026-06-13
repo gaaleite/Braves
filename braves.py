@@ -202,7 +202,7 @@ else:
                 cores_barras.append("#f1c40f")  # Amarelo suave para Empate
 
         try:
-                    # --- CONFIGURAÇÃO DO GRÁFICO COM ROLAGEM (RANGESLIDER) E BOTÕES ALTERNATIVOS ---
+        # --- CONFIGURAÇÃO DO GRÁFICO COM ROLAGEM (RANGESLIDER) E BOTÕES ALTERNATIVOS ---
         
         # Define quantos jogos aparecem na tela por vez ao abrir (ex: os últimos 15 jogos)
         # Isso impede que o gráfico esmague as 277 barras na tela do celular
